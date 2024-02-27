@@ -4,10 +4,12 @@ import (
 	"flag"
 
 	"github.com/sfomuseum/go-flags/flagset"
-	"github.com/sfomuseum/go-flags/multi"	
+	"github.com/sfomuseum/go-flags/multi"
 )
 
 var accounts_database_uri string
+var followers_database_uri string
+var deliveries_database_uri string
 var posts_database_uri string
 var feeds_database_uri string
 
@@ -27,12 +29,17 @@ func DefaultFlagSet() *flag.FlagSet {
 
 	fs.StringVar(&accounts_database_uri, "accounts-database-uri", "", "...")
 	fs.StringVar(&posts_database_uri, "posts-database-uri", "", "...")
+	fs.StringVar(&deliveries_database_uri, "deliveries-database-uri", "", "...")
+	fs.StringVar(&followers_database_uri, "followers-database-uri", "", "...")
+
 	fs.StringVar(&feeds_database_uri, "feeds-database-uri", "", "...")
+
+	fs.Var(&feed_uris, "feed-uri", "...")
 
 	fs.StringVar(&delivery_queue_uri, "delivery-queue-uri", "synchronous://", "...")
 
 	fs.StringVar(&account_name, "account-name", "", "...")
-	
+
 	fs.StringVar(&hostname, "hostname", "localhost:8080", "...")
 	fs.BoolVar(&insecure, "insecure", false, "...")
 	fs.BoolVar(&verbose, "verbose", false, "Enable verbose logging")

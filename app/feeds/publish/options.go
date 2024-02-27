@@ -11,11 +11,13 @@ import (
 
 type RunOptions struct {
 	AccountsDatabaseURI   string
-	FeedsDatabaseURI  string
+	FeedsDatabaseURI      string
 	PostsDatabaseURI      string
+	FollowersDatabaseURI  string
+	DeliveriesDatabaseURI string
 	DeliveryQueueURI      string
 	AccountName           string
-	FeedURIs []string
+	FeedURIs              []string
 	URIs                  *uris.URIs
 	Verbose               bool
 }
@@ -36,11 +38,13 @@ func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, err
 
 	opts := &RunOptions{
 		AccountsDatabaseURI:   accounts_database_uri,
-		FeedsDatabaseURI:  feeds_database_uri,
+		FeedsDatabaseURI:      feeds_database_uri,
+		FollowersDatabaseURI:  followers_database_uri,
+		DeliveriesDatabaseURI: deliveries_database_uri,
 		PostsDatabaseURI:      posts_database_uri,
 		DeliveryQueueURI:      delivery_queue_uri,
 		AccountName:           account_name,
-		FeedsURIs: feed_uris,
+		FeedURIs:              feed_uris,
 		URIs:                  uris_table,
 		Verbose:               verbose,
 	}

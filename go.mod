@@ -1,4 +1,4 @@
-module github.com/sfomuseum/go-actvitypub-feeds
+module github.com/sfomuseum/go-activitypub-feeds
 
 go 1.22.0
 

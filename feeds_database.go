@@ -14,6 +14,7 @@ import (
 
 type FeedsDatabase interface {
 	IsPublished(context.Context, int64, string, string) (bool, error)
+	AddPublicationLog(context.Context, *PublicationLog) error
 	Close(context.Context) error
 }
 

@@ -1,15 +1,14 @@
 package publish
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/mmcdole/gofeed"
 	"github.com/sfomuseum/go-activitypub"
+	"github.com/sfomuseum/go-activitypub-feeds"
 	ap_slog "github.com/sfomuseum/go-activitypub/slog"
 )
 
@@ -41,14 +40,6 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer accounts_db.Close(ctx)
 
-	feeds_db, err := activitypub.NewFeedsDatabase(ctx, opts.FeedsDatabaseURI)
-
-	if err != nil {
-		return fmt.Errorf("Failed to instantiate feeds database, %w", err)
-	}
-
-	defer followers_db.Close(ctx)
-
 	posts_db, err := activitypub.NewPostsDatabase(ctx, opts.PostsDatabaseURI)
 
 	if err != nil {
@@ -57,6 +48,29 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer posts_db.Close(ctx)
 
+	followers_db, err := activitypub.NewFollowersDatabase(ctx, opts.FollowersDatabaseURI)
+
+	if err != nil {
+		return fmt.Errorf("Failed to create instantiate followers database, %w", err)
+	}
+
+	defer followers_db.Close(ctx)
+
+	deliveries_db, err := activitypub.NewDeliveriesDatabase(ctx, opts.DeliveriesDatabaseURI)
+
+	if err != nil {
+		return fmt.Errorf("Failed to create instantiate deliveries database, %w", err)
+	}
+
+	defer deliveries_db.Close(ctx)
+
+	feeds_db, err := feeds.NewFeedsDatabase(ctx, opts.FeedsDatabaseURI)
+
+	if err != nil {
+		return fmt.Errorf("Failed to instantiate feeds database, %w", err)
+	}
+
+	defer feeds_db.Close(ctx)
 
 	delivery_q, err := activitypub.NewDeliveryQueue(ctx, opts.DeliveryQueueURI)
 
@@ -70,67 +84,72 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 		return fmt.Errorf("Failed to retrieve account %s, %w", opts.AccountName, err)
 	}
 
-	//
-	
 	fp := gofeed.NewParser()
-	
-	for _, uri := range opts.FeedURIs {
 
-		feed, err := fp.ParseURL(uri)
-	
+	for _, feed_url := range opts.FeedURIs {
+
+		feed, err := fp.ParseURL(feed_url)
+
 		if err != nil {
-			return fmt.Errorf("Failed to parse URI '%s', %w", uri, err)
+			return fmt.Errorf("Failed to parse URI '%s', %w", feed_url, err)
 		}
 
 		for _, item := range feed.Items {
-		
+
 			guid := item.GUID
 
-			is_published, err := feeds_db.IsPublished(ctx, acct.Id, uri, guid)
+			is_published, err := feeds_db.IsPublished(ctx, acct.Id, feed_url, guid)
 
 			if err != nil {
-				return fmt.Errorf("Failed to determine if %s#%s has been published by %d", uri, guid, acct.Id)
+				return fmt.Errorf("Failed to determine if %s#%s has been published by %d", feed_url, guid, acct.Id)
 			}
 
 			if is_published {
 				continue
 			}
 
-			slog.Info(item.Content)
+			post, err := activitypub.NewPost(ctx, acct, item.Content)
+
+			if err != nil {
+				return fmt.Errorf("Failed to create new post, %w", err)
+			}
+
+			err = posts_db.AddPost(ctx, post)
+
+			if err != nil {
+				return fmt.Errorf("Failed to add post, %w", err)
+			}
+
+			deliver_opts := &activitypub.DeliverPostToFollowersOptions{
+				AccountsDatabase:   accounts_db,
+				FollowersDatabase:  followers_db,
+				DeliveriesDatabase: deliveries_db,
+				DeliveryQueue:      delivery_q,
+				Post:               post,
+				URIs:               opts.URIs,
+			}
+
+			err = activitypub.DeliverPostToFollowers(ctx, deliver_opts)
+
+			if err != nil {
+				return fmt.Errorf("Failed to deliver post, %w", err)
+			}
+
+			log, err := feeds.NewPublicationLog(ctx, acct.Id, feed_url, guid)
+
+			if err != nil {
+				return fmt.Errorf("Failed to create new publication log, %w", err)
+			}
+
+			err = feeds_db.AddPublicationLog(ctx, log)
+
+			if err != nil {
+				return fmt.Errorf("Failed to add publication log, %w", err)
+			}
+
+			logger.Info("Published feed item", "account", acct.Id, "feed", feed_url, "item", guid, "post", post.Id, "log", log.Id)
 		}
 	}
 
-	//
-	
-	/*
-	p, err := activitypub.NewPost(ctx, acct, opts.Message)
-
-	if err != nil {
-		return fmt.Errorf("Failed to create new post, %w", err)
-	}
-
-	err = posts_db.AddPost(ctx, p)
-
-	if err != nil {
-		return fmt.Errorf("Failed to add post, %w", err)
-	}
-
-	deliver_opts := &activitypub.DeliverPostToFollowersOptions{
-		AccountsDatabase:   accounts_db,
-		FollowersDatabase:  followers_db,
-		DeliveriesDatabase: deliveries_db,
-		DeliveryQueue:      delivery_q,
-		Post:               p,
-		URIs:               opts.URIs,
-	}
-
-	err = activitypub.DeliverPostToFollowers(ctx, deliver_opts)
-
-	if err != nil {
-		return fmt.Errorf("Failed to deliver post, %w", err)
-	}
-
-	*/
-	
 	return nil
 }
