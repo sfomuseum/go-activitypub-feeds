@@ -105,6 +105,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 			}
 
 			if is_published {
+				logger.Info("Already published", "feed", feed_url, "item", guid)
 				continue
 			}
 

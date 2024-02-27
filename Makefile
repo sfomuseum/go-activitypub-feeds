@@ -19,7 +19,7 @@ publish:
 		-followers-database-uri '$(FOLLOWERS_DB_URI)' \
 		-posts-database-uri '$(POSTS_DB_URI)' \
 		-deliveries-database-uri '$(DELIVERIES_DB_URI)' \
-		-feeds-database-uri null:// \
+		-feeds-database-uri '$(FEEDS_DB_URI)' \
 		-account-name alice \
 		-feed-uri $(FEED) \
 		-hostname localhost:8080 \
