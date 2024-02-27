@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/mmcdole/gofeed"
 	"github.com/sfomuseum/go-activitypub"
 	"github.com/sfomuseum/go-activitypub-feeds"
@@ -84,78 +85,112 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 		return fmt.Errorf("Failed to retrieve account %s, %w", opts.AccountName, err)
 	}
 
-	fp := gofeed.NewParser()
+	// START OF put me... somewhere?
+	run := func(ctx context.Context) error {
 
-	for _, feed_url := range opts.FeedURIs {
+		fp := gofeed.NewParser()
 
-		// START OF put me in a function, maybe do this concurrently?
-		
-		feed, err := fp.ParseURL(feed_url)
+		for _, feed_url := range opts.FeedURIs {
 
-		if err != nil {
-			return fmt.Errorf("Failed to parse URI '%s', %w", feed_url, err)
+			// START OF put me in a function, maybe do this concurrently?
+
+			feed, err := fp.ParseURL(feed_url)
+
+			if err != nil {
+				return fmt.Errorf("Failed to parse URI '%s', %w", feed_url, err)
+			}
+
+			for i, item := range feed.Items {
+
+				guid := item.GUID
+
+				is_published, err := feeds_db.IsPublished(ctx, acct.Id, feed_url, guid)
+
+				if err != nil {
+					return fmt.Errorf("Failed to determine if %s#%s has been published by %d", feed_url, guid, acct.Id)
+				}
+
+				if is_published {
+					logger.Debug("Already published", "feed", feed_url, "item", guid)
+					continue
+				}
+
+				// This could be made... better
+				// body := item.Content				
+				// body := fmt.Sprintf(`<div xmlns="http://www.w3.org/1999/xhtml" style="text-align:left;">%s</div>`, item.Content)
+				// body := fmt.Sprintf(`<a href="%s">%s</a><br />%s`, item.Link, item.Link, item.Title)
+				
+				body := fmt.Sprintf(`<a href="%s">%s</a>`, item.Link, item.Title)
+				
+				post, err := activitypub.NewPost(ctx, acct, body)
+
+				if err != nil {
+					return fmt.Errorf("Failed to create new post, %w", err)
+				}
+
+				err = posts_db.AddPost(ctx, post)
+
+				if err != nil {
+					return fmt.Errorf("Failed to add post, %w", err)
+				}
+
+				deliver_opts := &activitypub.DeliverPostToFollowersOptions{
+					AccountsDatabase:   accounts_db,
+					FollowersDatabase:  followers_db,
+					DeliveriesDatabase: deliveries_db,
+					DeliveryQueue:      delivery_q,
+					Post:               post,
+					URIs:               opts.URIs,
+				}
+
+				err = activitypub.DeliverPostToFollowers(ctx, deliver_opts)
+
+				if err != nil {
+					return fmt.Errorf("Failed to deliver post, %w", err)
+				}
+
+				log, err := feeds.NewPublicationLog(ctx, acct.Id, feed_url, guid)
+
+				if err != nil {
+					return fmt.Errorf("Failed to create new publication log, %w", err)
+				}
+
+				err = feeds_db.AddPublicationLog(ctx, log)
+
+				if err != nil {
+					return fmt.Errorf("Failed to add publication log, %w", err)
+				}
+
+				logger.Info("Published feed item", "account", acct.Id, "feed", feed_url, "item", guid, "post", post.Id, "log", log.Id)
+
+				if i+1 >= opts.MaxPostsPerFeed {
+					break
+				}
+
+			}
+
+			// END OF put me in a function, maybe do this concurrently?
 		}
 
-		for _, item := range feed.Items {
-
-			guid := item.GUID
-
-			is_published, err := feeds_db.IsPublished(ctx, acct.Id, feed_url, guid)
-
-			if err != nil {
-				return fmt.Errorf("Failed to determine if %s#%s has been published by %d", feed_url, guid, acct.Id)
-			}
-
-			if is_published {
-				logger.Debug("Already published", "feed", feed_url, "item", guid)
-				continue
-			}
-
-			post, err := activitypub.NewPost(ctx, acct, item.Content)
-
-			if err != nil {
-				return fmt.Errorf("Failed to create new post, %w", err)
-			}
-
-			err = posts_db.AddPost(ctx, post)
-
-			if err != nil {
-				return fmt.Errorf("Failed to add post, %w", err)
-			}
-
-			deliver_opts := &activitypub.DeliverPostToFollowersOptions{
-				AccountsDatabase:   accounts_db,
-				FollowersDatabase:  followers_db,
-				DeliveriesDatabase: deliveries_db,
-				DeliveryQueue:      delivery_q,
-				Post:               post,
-				URIs:               opts.URIs,
-			}
-
-			err = activitypub.DeliverPostToFollowers(ctx, deliver_opts)
-
-			if err != nil {
-				return fmt.Errorf("Failed to deliver post, %w", err)
-			}
-
-			log, err := feeds.NewPublicationLog(ctx, acct.Id, feed_url, guid)
-
-			if err != nil {
-				return fmt.Errorf("Failed to create new publication log, %w", err)
-			}
-
-			err = feeds_db.AddPublicationLog(ctx, log)
-
-			if err != nil {
-				return fmt.Errorf("Failed to add publication log, %w", err)
-			}
-
-			logger.Info("Published feed item", "account", acct.Id, "feed", feed_url, "item", guid, "post", post.Id, "log", log.Id)
-			break
-		}
-
-		// END OF put me in a function, maybe do this concurrently?		
+		return nil
 	}
+	// END OF put me... somewhere
 
-	return nil
+	switch mode {
+	case "cli":
+
+		return run(ctx)
+
+	case "lambda":
+
+		handler := func(ctx context.Context) error {
+			return run(ctx)
+		}
+
+		lambda.Start(handler)
+		return nil
+
+	default:
+		return fmt.Errorf("Invalid or unsupported mode")
+	}
 }

@@ -31,3 +31,10 @@ dynamo-tables-local:
 		-refresh \
 		-table-prefix '$(TABLE_PREFIX)' \
 		-dynamodb-client-uri 'awsdynamodb://?local=true'
+
+lambda:
+	if test -f bootstrap; then rm -f bootstrap; fi
+	if test -f publish.zip; then rm -f publish.zip; fi
+	GOARCH=arm64 GOOS=linux go build -mod $(GOMOD) -ldflags="$(LDFLAGS)" -tags lambda.norpc -o bootstrap cmd/publish-feeds/main.go
+	zip publish.zip bootstrap
+	rm -f bootstrap

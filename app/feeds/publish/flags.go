@@ -16,8 +16,11 @@ var feeds_database_uri string
 var delivery_queue_uri string
 
 var feed_uris multi.MultiCSVString
+var max_posts_per_feed int
 
 var account_name string
+
+var mode string
 
 var hostname string
 var insecure bool
@@ -39,6 +42,10 @@ func DefaultFlagSet() *flag.FlagSet {
 	fs.StringVar(&delivery_queue_uri, "delivery-queue-uri", "synchronous://", "...")
 
 	fs.StringVar(&account_name, "account-name", "", "...")
+
+	fs.StringVar(&mode, "mode", "cli", "...")
+
+	fs.IntVar(&max_posts_per_feed, "max-posts-per-feed", 10, "...")
 
 	fs.StringVar(&hostname, "hostname", "localhost:8080", "...")
 	fs.BoolVar(&insecure, "insecure", false, "...")

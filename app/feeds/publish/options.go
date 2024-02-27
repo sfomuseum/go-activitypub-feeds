@@ -17,9 +17,11 @@ type RunOptions struct {
 	DeliveriesDatabaseURI string
 	DeliveryQueueURI      string
 	AccountName           string
+	Mode                  string
 	FeedURIs              []string
 	URIs                  *uris.URIs
 	Verbose               bool
+	MaxPostsPerFeed       int
 }
 
 func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, error) {
@@ -44,7 +46,9 @@ func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, err
 		PostsDatabaseURI:      posts_database_uri,
 		DeliveryQueueURI:      delivery_queue_uri,
 		AccountName:           account_name,
+		Mode:                  mode,
 		FeedURIs:              feed_uris,
+		MaxPostsPerFeed:       max_posts_per_feed,
 		URIs:                  uris_table,
 		Verbose:               verbose,
 	}
