@@ -3,23 +3,24 @@ module github.com/sfomuseum/go-activitypub-feeds
 go 1.22.0
 
 require (
+	github.com/aaronland/go-aws-dynamodb v0.0.7
 	github.com/aaronland/go-roster v1.0.0
+	github.com/aaronland/gocloud-docstore v0.0.5
+	github.com/aws/aws-sdk-go v1.50.27
 	github.com/mmcdole/gofeed v1.2.1
-	github.com/sfomuseum/go-activitypub v0.0.0-20240227000955-31851496917e
+	github.com/sfomuseum/go-activitypub v0.0.0-20240227194349-16b4b66e9499
 	github.com/sfomuseum/go-flags v0.10.0
+	gocloud.dev v0.36.0
 )
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/aaronland/go-aws-auth v1.3.0 // indirect
-	github.com/aaronland/go-aws-dynamodb v0.0.5 // indirect
 	github.com/aaronland/go-aws-session v0.2.1 // indirect
 	github.com/aaronland/go-pagination v0.2.0 // indirect
 	github.com/aaronland/go-pagination-sql v0.2.0 // indirect
 	github.com/aaronland/go-string v1.0.0 // indirect
-	github.com/aaronland/gocloud-docstore v0.0.5 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
-	github.com/aws/aws-sdk-go v1.50.23 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.24.1 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.26.6 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.16 // indirect
@@ -60,7 +61,6 @@ require (
 	github.com/sfomuseum/iso8601duration v1.1.0 // indirect
 	github.com/sfomuseum/runtimevar v1.1.4 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	gocloud.dev v0.36.0 // indirect
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect

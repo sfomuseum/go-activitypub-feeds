@@ -4,8 +4,8 @@ github.com/PuerkitoBio/goquery
 # github.com/aaronland/go-aws-auth v1.3.0
 ## explicit; go 1.22rc2
 github.com/aaronland/go-aws-auth
-# github.com/aaronland/go-aws-dynamodb v0.0.5
-## explicit; go 1.18
+# github.com/aaronland/go-aws-dynamodb v0.0.7
+## explicit; go 1.21
 github.com/aaronland/go-aws-dynamodb
 # github.com/aaronland/go-aws-session v0.2.1
 ## explicit; go 1.18
@@ -29,7 +29,7 @@ github.com/aaronland/gocloud-docstore
 # github.com/andybalholm/cascadia v1.3.1
 ## explicit; go 1.16
 github.com/andybalholm/cascadia
-# github.com/aws/aws-sdk-go v1.50.23
+# github.com/aws/aws-sdk-go v1.50.27
 ## explicit; go 1.19
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/auth/bearer
@@ -277,7 +277,7 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 ## explicit; go 1.12
 github.com/modern-go/reflect2
-# github.com/sfomuseum/go-activitypub v0.0.0-20240227000955-31851496917e
+# github.com/sfomuseum/go-activitypub v0.0.0-20240227194349-16b4b66e9499
 ## explicit; go 1.22.0
 github.com/sfomuseum/go-activitypub
 github.com/sfomuseum/go-activitypub/ap
