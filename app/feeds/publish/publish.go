@@ -100,7 +100,9 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 				return fmt.Errorf("Failed to parse URI '%s', %w", feed_url, err)
 			}
 
-			for i, item := range feed.Items {
+			published := 0
+			
+			for _, item := range feed.Items {
 
 				guid := item.GUID
 
@@ -163,7 +165,9 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 				logger.Info("Published feed item", "account", acct.Id, "feed", feed_url, "item", guid, "post", post.Id, "log", log.Id)
 
-				if i+1 >= opts.MaxPostsPerFeed {
+				published += 1
+				
+				if published >= opts.MaxPostsPerFeed {
 					break
 				}
 
