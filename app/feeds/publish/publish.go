@@ -88,6 +88,8 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	for _, feed_url := range opts.FeedURIs {
 
+		// START OF put me in a function, maybe do this concurrently?
+		
 		feed, err := fp.ParseURL(feed_url)
 
 		if err != nil {
@@ -105,7 +107,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 			}
 
 			if is_published {
-				logger.Info("Already published", "feed", feed_url, "item", guid)
+				logger.Debug("Already published", "feed", feed_url, "item", guid)
 				continue
 			}
 
@@ -149,7 +151,10 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 			}
 
 			logger.Info("Published feed item", "account", acct.Id, "feed", feed_url, "item", guid, "post", post.Id, "log", log.Id)
+			break
 		}
+
+		// END OF put me in a function, maybe do this concurrently?		
 	}
 
 	return nil
