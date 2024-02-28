@@ -122,7 +122,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 				// body := fmt.Sprintf(`<div xmlns="http://www.w3.org/1999/xhtml" style="text-align:left;">%s</div>`, item.Content)
 				// body := fmt.Sprintf(`<a href="%s">%s</a><br />%s`, item.Link, item.Link, item.Title)
 				
-				body := fmt.Sprintf(`<a href="%s">%s</a>`, item.Link, item.Title)
+				body := fmt.Sprintf(`%s<br/><br /><a href="%s">%s</a>`, item.Title, item.Link, item.Link)
 				
 				post, err := activitypub.NewPost(ctx, acct, body)
 
