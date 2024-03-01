@@ -104,6 +104,21 @@ func (a *Account) PostURL(ctx context.Context, uris_table *uris.URIs, post *Post
 	return uris.NewURL(uris_table, post_path)
 }
 
+func (a *Account) WebfingerURL(ctx context.Context, uris_table *uris.URIs) *url.URL {
+
+	address := a.Address(uris_table.Hostname)
+	acct := fmt.Sprintf("acct:%s", address)
+
+	wf_q := &url.Values{}
+	wf_q.Set("resource", acct)
+
+	wf_u := &url.URL{}
+	wf_u.Path = webfinger.Endpoint
+	wf_u.RawQuery = wf_q.Encode()
+
+	return wf_u
+}
+
 func (a *Account) WebfingerResource(ctx context.Context, uris_table *uris.URIs) (*webfinger.Resource, error) {
 
 	account_url := a.AccountURL(ctx, uris_table)
@@ -324,4 +339,20 @@ func UpdateAccount(ctx context.Context, db AccountsDatabase, a *Account) (*Accou
 	}
 
 	return a, nil
+}
+
+func IsAccountNameTaken(ctx context.Context, accounts_db AccountsDatabase, name string) (bool, error) {
+
+	_, err := accounts_db.GetAccountWithName(ctx, name)
+
+	if err != nil {
+
+		if err != ErrNotFound {
+			return false, fmt.Errorf("Failed to determine is name is taken, %w", err)
+		}
+
+		return false, nil
+	}
+
+	return true, nil
 }

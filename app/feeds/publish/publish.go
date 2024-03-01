@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"math/rand"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/mmcdole/gofeed"
@@ -100,9 +101,20 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 				return fmt.Errorf("Failed to parse URI '%s', %w", feed_url, err)
 			}
 
+			// START OF shuffle items
+
+			items := feed.Items
+
+			for i := range items {
+				j := rand.Intn(i + 1)
+				items[i], items[j] = items[j], items[i]
+			}
+
+			// END OF shuffle items
+
 			published := 0
-			
-			for _, item := range feed.Items {
+
+			for _, item := range items {
 
 				guid := item.GUID
 
@@ -118,12 +130,12 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 				}
 
 				// This could be made... better
-				// body := item.Content				
+				// body := item.Content
 				// body := fmt.Sprintf(`<div xmlns="http://www.w3.org/1999/xhtml" style="text-align:left;">%s</div>`, item.Content)
 				// body := fmt.Sprintf(`<a href="%s">%s</a><br />%s`, item.Link, item.Link, item.Title)
-				
+
 				body := fmt.Sprintf(`%s<br/><br /><a href="%s">%s</a>`, item.Title, item.Link, item.Link)
-				
+
 				post, err := activitypub.NewPost(ctx, acct, body)
 
 				if err != nil {
@@ -166,7 +178,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 				logger.Info("Published feed item", "account", acct.Id, "feed", feed_url, "item", guid, "post", post.Id, "log", log.Id)
 
 				published += 1
-				
+
 				if published >= opts.MaxPostsPerFeed {
 					break
 				}
