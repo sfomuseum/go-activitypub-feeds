@@ -9,8 +9,8 @@ import (
 	gc_docstore "gocloud.dev/docstore"
 )
 
-type DocstoreFeedsDatabase struct {
-	FeedsDatabase
+type DocstoreFeedsPublicationLogsDatabase struct {
+	FeedsPublicationLogsDatabase
 	collection *gc_docstore.Collection
 }
 
@@ -18,14 +18,14 @@ func init() {
 
 	ctx := context.Background()
 
-	RegisterFeedsDatabase(ctx, "awsdynamodb", NewDocstoreFeedsDatabase)
+	RegisterFeedsPublicationLogsDatabase(ctx, "awsdynamodb", NewDocstoreFeedsPublicationLogsDatabase)
 
 	for _, scheme := range gc_docstore.DefaultURLMux().CollectionSchemes() {
-		RegisterFeedsDatabase(ctx, scheme, NewDocstoreFeedsDatabase)
+		RegisterFeedsPublicationLogsDatabase(ctx, scheme, NewDocstoreFeedsPublicationLogsDatabase)
 	}
 }
 
-func NewDocstoreFeedsDatabase(ctx context.Context, uri string) (FeedsDatabase, error) {
+func NewDocstoreFeedsPublicationLogsDatabase(ctx context.Context, uri string) (FeedsPublicationLogsDatabase, error) {
 
 	col, err := aa_docstore.OpenCollection(ctx, uri)
 
@@ -33,14 +33,14 @@ func NewDocstoreFeedsDatabase(ctx context.Context, uri string) (FeedsDatabase, e
 		return nil, fmt.Errorf("Failed to open collection, %w", err)
 	}
 
-	db := &DocstoreFeedsDatabase{
+	db := &DocstoreFeedsPublicationLogsDatabase{
 		collection: col,
 	}
 
 	return db, nil
 }
 
-func (db *DocstoreFeedsDatabase) IsPublished(ctx context.Context, account_id int64, feed_url string, item_guid string) (bool, error) {
+func (db *DocstoreFeedsPublicationLogsDatabase) IsPublished(ctx context.Context, account_id int64, feed_url string, item_guid string) (bool, error) {
 
 	q := db.collection.Query()
 	q = q.Where("AccountId", "=", account_id)
@@ -62,10 +62,10 @@ func (db *DocstoreFeedsDatabase) IsPublished(ctx context.Context, account_id int
 	}
 }
 
-func (db *DocstoreFeedsDatabase) AddPublicationLog(ctx context.Context, log *PublicationLog) error {
+func (db *DocstoreFeedsPublicationLogsDatabase) AddPublicationLog(ctx context.Context, log *PublicationLog) error {
 	return db.collection.Put(ctx, log)
 }
 
-func (db *DocstoreFeedsDatabase) Close(ctx context.Context) error {
+func (db *DocstoreFeedsPublicationLogsDatabase) Close(ctx context.Context) error {
 	return db.collection.Close()
 }

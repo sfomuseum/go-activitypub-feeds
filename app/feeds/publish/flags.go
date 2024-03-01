@@ -11,7 +11,7 @@ var accounts_database_uri string
 var followers_database_uri string
 var deliveries_database_uri string
 var posts_database_uri string
-var feeds_database_uri string
+var feeds_publication_logs_database_uri string
 
 var delivery_queue_uri string
 
@@ -35,7 +35,7 @@ func DefaultFlagSet() *flag.FlagSet {
 	fs.StringVar(&deliveries_database_uri, "deliveries-database-uri", "", "...")
 	fs.StringVar(&followers_database_uri, "followers-database-uri", "", "...")
 
-	fs.StringVar(&feeds_database_uri, "feeds-database-uri", "", "...")
+	fs.StringVar(&feeds_publication_logs_database_uri, "feeds-publication-logs-database-uri", "", "...")
 
 	fs.Var(&feed_uris, "feed-uri", "...")
 

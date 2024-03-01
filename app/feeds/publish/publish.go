@@ -66,7 +66,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer deliveries_db.Close(ctx)
 
-	feeds_db, err := feeds.NewFeedsDatabase(ctx, opts.FeedsDatabaseURI)
+	feeds_db, err := feeds.NewFeedsPublicationLogsDatabase(ctx, opts.FeedsPublicationLogsDatabaseURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to instantiate feeds database, %w", err)
