@@ -3,7 +3,12 @@ package activitypub
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sfomuseum/go-activitypub/ap"
@@ -12,9 +17,8 @@ import (
 )
 
 type Post struct {
-	Id        int64  `json:"id"`
-	UUID      string `json:"uuid"`
-	AccountId int64  `json:"account_id"`
+	Id        int64 `json:"id"`
+	AccountId int64 `json:"account_id"`
 	// This is a string mostly because []byte thingies get encoded incorrectly
 	// in DynamoDB
 	Body         string `json:"body"`
@@ -30,14 +34,11 @@ func NewPost(ctx context.Context, acct *Account, body string) (*Post, error) {
 		return nil, fmt.Errorf("Failed to derive new post ID, %w", err)
 	}
 
-	uuid := id.NewUUID()
-
 	now := time.Now()
 	ts := now.Unix()
 
 	p := &Post{
 		Id:           post_id,
-		UUID:         uuid,
 		AccountId:    acct.Id,
 		Body:         body,
 		Created:      ts,
@@ -54,13 +55,14 @@ func NoteFromPost(ctx context.Context, uris_table *uris.URIs, acct *Account, pos
 
 	post_url := acct.PostURL(ctx, uris_table, post)
 
-	ap_id := ap.NewId(uris_table)
+	// this is what we used to do...
+	// ap_id := ap.NewId(uris_table)
 
 	t := time.Unix(post.Created, 0)
 
 	n := &ap.Note{
 		Type:         "Note",
-		Id:           ap_id,
+		Id:           post_url.String(),
 		AttributedTo: attr,
 		To:           "https://www.w3.org/ns/activitystreams#Public", // what?
 		Content:      post.Body,
@@ -69,4 +71,41 @@ func NoteFromPost(ctx context.Context, uris_table *uris.URIs, acct *Account, pos
 	}
 
 	return n, nil
+}
+
+func GetPostFromObjectURI(ctx context.Context, uris_table *uris.URIs, posts_db PostsDatabase, object_uri string) (*Post, error) {
+
+	pat_post := uris_table.Post
+	pat_post = strings.Replace(pat_post, "{resource}", "(?:@[^\\/]+)", 1)
+	pat_post = strings.Replace(pat_post, "{id}", "(\\d+)", 1)
+
+	re_post, err := regexp.Compile(pat_post)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to compile post URI pattern, %w", err)
+	}
+
+	u, err := url.Parse(object_uri)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse URI, %w", err)
+	}
+
+	object_path := u.Path
+
+	if !re_post.MatchString(object_path) {
+		slog.Debug("Invalid or unsupport post URI", "uri", object_uri)
+		return nil, fmt.Errorf("Invalid or unsupport post URI")
+	}
+
+	m := re_post.FindStringSubmatch(object_path)
+
+	str_id := m[1]
+	post_id, err := strconv.ParseInt(str_id, 10, 64)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse ID derived from object URI, %w", err)
+	}
+
+	return posts_db.GetPostWithId(ctx, post_id)
 }

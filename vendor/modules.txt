@@ -35,7 +35,7 @@ github.com/aws/aws-lambda-go/lambda
 github.com/aws/aws-lambda-go/lambda/handlertrace
 github.com/aws/aws-lambda-go/lambda/messages
 github.com/aws/aws-lambda-go/lambdacontext
-# github.com/aws/aws-sdk-go v1.50.29
+# github.com/aws/aws-sdk-go v1.50.31
 ## explicit; go 1.19
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/auth/bearer
@@ -266,7 +266,7 @@ github.com/json-iterator/go
 # github.com/jtacoma/uritemplates v1.0.0
 ## explicit
 github.com/jtacoma/uritemplates
-# github.com/mmcdole/gofeed v1.2.1
+# github.com/mmcdole/gofeed v1.3.0
 ## explicit; go 1.19
 github.com/mmcdole/gofeed
 github.com/mmcdole/gofeed/atom
@@ -274,7 +274,7 @@ github.com/mmcdole/gofeed/extensions
 github.com/mmcdole/gofeed/internal/shared
 github.com/mmcdole/gofeed/json
 github.com/mmcdole/gofeed/rss
-# github.com/mmcdole/goxpp v1.1.0
+# github.com/mmcdole/goxpp v1.1.1-0.20240225020742-a0c311522b23
 ## explicit; go 1.19
 github.com/mmcdole/goxpp
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
@@ -283,7 +283,7 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 ## explicit; go 1.12
 github.com/modern-go/reflect2
-# github.com/sfomuseum/go-activitypub v0.0.0-20240301012035-82ca7f692dae
+# github.com/sfomuseum/go-activitypub v0.0.0-20240305000955-25301e8b8234
 ## explicit; go 1.22.0
 github.com/sfomuseum/go-activitypub
 github.com/sfomuseum/go-activitypub/ap

@@ -7,9 +7,9 @@ require (
 	github.com/aaronland/go-roster v1.0.0
 	github.com/aaronland/gocloud-docstore v0.0.5
 	github.com/aws/aws-lambda-go v1.46.0
-	github.com/aws/aws-sdk-go v1.50.29
-	github.com/mmcdole/gofeed v1.2.1
-	github.com/sfomuseum/go-activitypub v0.0.0-20240301012035-82ca7f692dae
+	github.com/aws/aws-sdk-go v1.50.31
+	github.com/mmcdole/gofeed v1.3.0
+	github.com/sfomuseum/go-activitypub v0.0.0-20240305000955-25301e8b8234
 	github.com/sfomuseum/go-flags v0.10.0
 	gocloud.dev v0.36.0
 )
@@ -55,7 +55,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/jtacoma/uritemplates v1.0.0 // indirect
-	github.com/mmcdole/goxpp v1.1.0 // indirect
+	github.com/mmcdole/goxpp v1.1.1-0.20240225020742-a0c311522b23 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/sfomuseum/go-pubsub v0.0.14 // indirect
