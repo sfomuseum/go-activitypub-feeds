@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-lambda-go v1.46.0
 	github.com/aws/aws-sdk-go v1.50.31
 	github.com/mmcdole/gofeed v1.3.0
-	github.com/sfomuseum/go-activitypub v0.0.0-20240305000955-25301e8b8234
+	github.com/sfomuseum/go-activitypub v0.0.0-20240305015344-2619d425017e
 	github.com/sfomuseum/go-flags v0.10.0
 	gocloud.dev v0.36.0
 )

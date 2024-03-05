@@ -283,7 +283,7 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 ## explicit; go 1.12
 github.com/modern-go/reflect2
-# github.com/sfomuseum/go-activitypub v0.0.0-20240305000955-25301e8b8234
+# github.com/sfomuseum/go-activitypub v0.0.0-20240305015344-2619d425017e
 ## explicit; go 1.22.0
 github.com/sfomuseum/go-activitypub
 github.com/sfomuseum/go-activitypub/ap
