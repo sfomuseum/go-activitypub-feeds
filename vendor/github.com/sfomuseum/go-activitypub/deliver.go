@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"encoding/json"
+
 	"github.com/sfomuseum/go-activitypub/ap"
 	"github.com/sfomuseum/go-activitypub/id"
 	"github.com/sfomuseum/go-activitypub/uris"
@@ -15,6 +17,7 @@ type DeliverPostOptions struct {
 	From               *Account           `json:"from"`
 	To                 string             `json:"to"`
 	Post               *Post              `json:"post"`
+	PostTags           []*PostTag         `json:"post_tags"`
 	URIs               *uris.URIs         `json:"uris"`
 	DeliveriesDatabase DeliveriesDatabase `json:"deliveries_database,omitempty"`
 }
@@ -22,9 +25,11 @@ type DeliverPostOptions struct {
 type DeliverPostToFollowersOptions struct {
 	AccountsDatabase   AccountsDatabase
 	FollowersDatabase  FollowersDatabase
+	PostTagsDatabase   PostTagsDatabase
 	DeliveriesDatabase DeliveriesDatabase
 	DeliveryQueue      DeliveryQueue
 	Post               *Post
+	PostTags           []*PostTag `json:"post_tags"`
 	URIs               *uris.URIs
 }
 
@@ -37,6 +42,8 @@ func DeliverPostToFollowers(ctx context.Context, opts *DeliverPostToFollowersOpt
 	}
 
 	followers_cb := func(ctx context.Context, follower_uri string) error {
+
+		slog.Info("DELIVER", "uri", follower_uri)
 
 		already_delivered := false
 
@@ -64,6 +71,7 @@ func DeliverPostToFollowers(ctx context.Context, opts *DeliverPostToFollowersOpt
 			From:               acct,
 			To:                 follower_uri,
 			Post:               opts.Post,
+			PostTags:           opts.PostTags,
 			URIs:               opts.URIs,
 			DeliveriesDatabase: opts.DeliveriesDatabase,
 		}
@@ -81,6 +89,17 @@ func DeliverPostToFollowers(ctx context.Context, opts *DeliverPostToFollowersOpt
 
 	if err != nil {
 		return fmt.Errorf("Failed to get followers for post author, %w", err)
+	}
+
+	// tags/mentions
+
+	for _, t := range opts.PostTags {
+
+		err := followers_cb(ctx, t.Name) // name or href?
+
+		if err != nil {
+			return fmt.Errorf("Failed to deliver message to %s (%d), %w", t.Name, t.Id, err)
+		}
 	}
 
 	return nil
@@ -120,12 +139,19 @@ func DeliverPost(ctx context.Context, opts *DeliverPostOptions) error {
 		}
 	}()
 
-	note, err := NoteFromPost(ctx, opts.URIs, opts.From, opts.Post)
+	note, err := NoteFromPost(ctx, opts.URIs, opts.From, opts.Post, opts.PostTags)
 
 	if err != nil {
 		d.Error = err.Error()
 		return fmt.Errorf("Failed to derive note from post, %w", err)
 	}
+
+	//
+
+	enc, _ := json.Marshal(note)
+	fmt.Printf("\n\n%s\n\n", string(enc))
+
+	//
 
 	from_uri := opts.From.AccountURL(ctx, opts.URIs).String()
 

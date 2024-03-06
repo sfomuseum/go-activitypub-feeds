@@ -31,6 +31,7 @@ ACCOUNTS_DB=accounts.db
 FOLLOWERS_DB=followers.db
 FOLLOWING_DB=following.db
 POSTS_DB=posts.db
+POST_TAGS_DB=posts.db
 NOTES_DB=notes.db
 MESSAGES_DB=messages.db
 BLOCKS_DB=blocks.db
@@ -43,6 +44,7 @@ FOLLOWERS_DB_URI=sql://sqlite3?dsn=$(FOLLOWERS_DB)
 FOLLOWING_DB_URI=sql://sqlite3?dsn=$(FOLLOWING_DB)
 BLOCKS_DB_URI=sql://sqlite3?dsn=$(BLOCKS_DB)
 POSTS_DB_URI=sql://sqlite3?dsn=$(POSTS_DB)
+POST_TAGS_DB_URI=sql://sqlite3?dsn=$(POST_TAGS_DB)
 NOTES_DB_URI=sql://sqlite3?dsn=$(NOTES_DB)
 MESSAGES_DB_URI=sql://sqlite3?dsn=$(MESSAGES_DB)
 DELIVERIES_DB_URI=sql://sqlite3?dsn=$(DELIVERIES_DB)
@@ -56,11 +58,13 @@ FOLLOWERS_DB_URI=awsdynamodb://$(TABLE_PREFIX)followers?partition_key=Id&allow_s
 BLOCKS_DB_URI=awsdynamodb://$(TABLE_PREFIX)blocks?partition_key=Id&allow_scans=true&local=true
 NOTES_DB_URI=awsdynamodb://$(TABLE_PREFIX)notes?partition_key=Id&allow_scans=true&local=true
 POSTS_DB_URI=awsdynamodb://$(TABLE_PREFIX)posts?partition_key=Id&allow_scans=true&local=true
+POST_TAGS_DB_URI=awsdynamodb://$(TABLE_PREFIX)post_tags?partition_key=Id&allow_scans=true&local=true
 MESSAGES_DB_URI=awsdynamodb://$(TABLE_PREFIX)messages?partition_key=Id&allow_scans=true&local=true
 DELIVERIES_DB_URI=awsdynamodb://$(TABLE_PREFIX)deliveries?partition_key=Id&allow_scans=true&local=true
 ALIASES_DB_URI=awsdynamodb://$(TABLE_PREFIX)aliases?partition_key=Name&allow_scans=true&local=true
 BOOSTS_DB_URI=awsdynamodb://$(TABLE_PREFIX)boosts?partition_key=Name&allow_scans=true&local=true
 LIKES_DB_URI=awsdynamodb://$(TABLE_PREFIX)likes?partition_key=Name&allow_scans=true&local=true
+REPLIES_DB_URI=awsdynamodb://$(TABLE_PREFIX)replies?partition_key=Name&allow_scans=true&local=true
 
 db-sqlite:
 	rm -f *.db
@@ -68,6 +72,7 @@ db-sqlite:
 	$(SQLITE3) $(FOLLOWERS_DB) < schema/sqlite/followers.schema
 	$(SQLITE3) $(FOLLOWING_DB) < schema/sqlite/following.schema
 	$(SQLITE3) $(POSTS_DB) < schema/sqlite/posts.schema
+	$(SQLITE3) $(POST_TAGS_DB) < schema/sqlite/post_tags.schema
 	$(SQLITE3) $(NOTES_DB) < schema/sqlite/notes.schema
 	$(SQLITE3) $(MESSAGES_DB) < schema/sqlite/messages.schema
 	$(SQLITE3) $(BLOCKS_DB) < schema/sqlite/blocks.schema
@@ -138,13 +143,29 @@ unblock:
 # Alice wants to post something (to Bob, if Bob is following Alice)
 
 post:
-	go run cmd/post/main.go \
+	go run cmd/create-post/main.go \
 		-accounts-database-uri '$(ACCOUNTS_DB_URI)' \
 		-followers-database-uri '$(FOLLOWERS_DB_URI)' \
 		-posts-database-uri '$(POSTS_DB_URI)' \
+		-post-tags-database-uri '$(POST_TAGS_DB_URI)' \
 		-deliveries-database-uri '$(DELIVERIES_DB_URI)' \
 		-account-name alice \
 		-message "$(MESSAGE)" \
+		-hostname localhost:8080 \
+		-insecure \
+		-verbose
+
+reply:
+	go run cmd/create-post/main.go \
+		-accounts-database-uri '$(ACCOUNTS_DB_URI)' \
+		-followers-database-uri '$(FOLLOWERS_DB_URI)' \
+		-posts-database-uri '$(POSTS_DB_URI)' \
+		-post-tags-database-uri '$(POST_TAGS_DB_URI)' \
+		-deliveries-database-uri '$(DELIVERIES_DB_URI)' \
+		-account-name bob \
+		-message "$(MESSAGE)" \
+		-in-reply-to $(INREPLYTO) \
+		-mention $(MENTION) \
 		-hostname localhost:8080 \
 		-insecure \
 		-verbose
