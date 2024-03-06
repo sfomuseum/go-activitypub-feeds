@@ -48,7 +48,7 @@ var DynamoDBFeedsPublicationsLogsTable = &dynamodb.CreateTableInput{
 			},
 		},
 		{
-			IndexName: aws.String("account_feed"),
+			IndexName: aws.String("by_feed"),
 			KeySchema: []*dynamodb.KeySchemaElement{
 				{
 					AttributeName: aws.String("FeedURL"),
