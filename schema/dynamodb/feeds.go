@@ -25,16 +25,10 @@ var DynamoDBFeedsPublicationsLogsTable = &dynamodb.CreateTableInput{
 			AttributeName: aws.String("FeedURL"),
 			AttributeType: aws.String("S"),
 		},
-		/*
-			{
-				AttributeName: aws.String("ItemGUID"),
-				AttributeType: aws.String("S"),
-			},
-			{
-				AttributeName: aws.String("Published"),
-				AttributeType: aws.String("N"),
-			},
-		*/
+		{
+			AttributeName: aws.String("Published"),
+			AttributeType: aws.String("N"),
+		},		
 	},
 	GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
 		{
@@ -50,9 +44,37 @@ var DynamoDBFeedsPublicationsLogsTable = &dynamodb.CreateTableInput{
 				},
 			},
 			Projection: &dynamodb.Projection{
-				ProjectionType: aws.String("ALL"),
+				ProjectionType: aws.String("KEYS_ONLY"),
 			},
 		},
+		{
+			IndexName: aws.String("account_feed"),
+			KeySchema: []*dynamodb.KeySchemaElement{
+				{
+					AttributeName: aws.String("FeedURL"),
+					KeyType:       aws.String("HASH"),
+				},
+				{
+					AttributeName: aws.String("Published"),
+					KeyType:       aws.String("RANGE"),
+				},
+			},
+			Projection: &dynamodb.Projection{
+				ProjectionType: aws.String("KEYS_ONLY"),
+			},
+		},		
+		{
+			IndexName: aws.String("by_published"),
+			KeySchema: []*dynamodb.KeySchemaElement{
+				{
+					AttributeName: aws.String("Published"),
+					KeyType:       aws.String("HASH"),
+				},
+			},
+			Projection: &dynamodb.Projection{
+				ProjectionType: aws.String("KEYS_ONLY"),
+			},
+		},		
 	},
 	BillingMode: BILLING_MODE,
 	TableName:   &FEEDS_TABLE_NAME,
