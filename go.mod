@@ -7,9 +7,9 @@ require (
 	github.com/aaronland/go-roster v1.0.0
 	github.com/aaronland/gocloud-docstore v0.0.5
 	github.com/aws/aws-lambda-go v1.46.0
-	github.com/aws/aws-sdk-go v1.50.32
+	github.com/aws/aws-sdk-go v1.50.33
 	github.com/mmcdole/gofeed v1.3.0
-	github.com/sfomuseum/go-activitypub v0.0.0-20240306011520-41f75d548ab5
+	github.com/sfomuseum/go-activitypub v0.0.0-20240306231234-34eb1f0943fc
 	github.com/sfomuseum/go-flags v0.10.0
 	gocloud.dev v0.36.0
 )
