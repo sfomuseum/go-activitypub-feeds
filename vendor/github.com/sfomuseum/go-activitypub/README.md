@@ -2,6 +2,18 @@
 
 An opionated (and incomplete) ActivityPub service implementation in Go.
 
+## Background
+
+The ["Holding Hands with the "Fediverse" – ActivityPub at SFO Museum"](https://millsfield.sfomuseum.org/blog/2024/03/12/activitypub/) blog post is a good place to start. It is a long, but thorough, discussion of why, what and how SFO Museum is thinking about ActivityPub in relation to its collection and digital initiatives.
+
+## Documentation
+
+The documentation for this package is incomplete reflecting the nature of our work to first understand the mechanics, and second explore the tolerances, of the ActivityPub protocols. The closest thing to "quick start" documentation can be found in the [Example](https://github.com/sfomuseum/go-activitypub?tab=readme-ov-file#example) section of this README.
+
+In advance of more comprehensive documentation we have set a GitHub “Discussions” group where people can ask questions or offer suggestions:
+
+* https://github.com/orgs/sfomuseum/discussions/1
+
 ## Motivation
 
 I find the documentation for ActivityPub very confusing. I don't think I have any problem(s) with the underlying specification but I have not found any implementation guides that haven't left me feeling more confused than when I started. This includes the actual ActivityPub specifications published by the W3C which are no doubt thorough but, as someone with a finite of amount of competing time to devote to reading those specs, often feel counter-productive. Likewise, working implementations of the ActivityPub standards are often a confusing maze of abstractions that become necessary to do everything defined in the specs. There are some third-party guides, listed below, which are better than others but so far each one has felt incomplete in one way or another.
@@ -203,6 +215,37 @@ _To be written._
 _To be written. In the meantime consult [inbox.go](inbox.go), [actor.go](actor.go) and [www/inbox_post.go](www/inbox_post.go)._
 
 ## The Code
+
+### Architecture
+
+Here is a high-level boxes-and-arrows diagram of the core components of this package:
+
+![](docs/images/ap-arch.png)
+
+There are four main components:
+
+1. A database layer (which is anything implemeting the interfaces for the "databases" or "tables" discussed below)
+2. A queueing layer which is anything that implements the "delivery queue" interface discussed below)
+3. A [cmd/deliver-post](cmd/deliver-post/main.go) application for delivering messages which can be run from the command line or as an AWS Lambda function
+4. A [cmd/server](cmd/server/main.go) application which implements a subset of the ActvityPub related resources. These are: A `/.well-known/webfinger` resource for retrieving account information; Individual account resource pages; Individual account "inbox" resources; Minimalistic "permalink" pages for individual posts.
+
+Importantly, this package does _not_ implement ActivityPub "outboxes" yet. It is assumed that individual posts are written directly to your "posts" database/table and then registered with the delivery queue explicitly in your custom code. That doesn't mean it will always be this way. It just means it's that way right now. Take a look at [cmd/create-post](cmd/create-post/main.go) and [app/post/create](app/post/create) for an example of how to post messages manually.
+
+For example, imagine that:
+
+* The purple box is an AWS DynamoDB database (with 12 separate tables)
+* The blue box is an AWS SQS queue
+* The green boxes are AWS Lambda functions. The `cmd/server` function will need to be configured so that it is reachable from the internet whether that means it is configured as a Lambda Function URL or "fronted" by an API Gateway instance; those details are left as an exercise to the reader.
+
+However, this same setup could be configured and deployed where:
+
+* The purple box is a MySQL database (with 12 separate tables)
+* The blue box is a plain-vanilla "pub-sub" style queue
+* The green boxes are long-running daemons on a plain-vanilla Linux server
+
+The point is that the code tries to be agnostic about these details. As such the code tries to define abstract "interfaces" for these high-level concepts in order to allow for a multiplicity of concrete implementations. Currently those implementations are centered on local and synchronous processes and AWS services but the hope is that it will be easy (or at least straightforward) to write custom implementations as needed.
+
+These interfaces are discussed further below.
 
 ### Databases
 
