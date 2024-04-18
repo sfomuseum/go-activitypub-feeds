@@ -1,15 +1,15 @@
 module github.com/sfomuseum/go-activitypub-feeds
 
-go 1.22.0
+go 1.22.2
 
 require (
 	github.com/aaronland/go-aws-dynamodb v0.0.7
 	github.com/aaronland/go-roster v1.0.0
 	github.com/aaronland/gocloud-docstore v0.0.5
-	github.com/aws/aws-lambda-go v1.46.0
-	github.com/aws/aws-sdk-go v1.51.1
+	github.com/aws/aws-lambda-go v1.47.0
+	github.com/aws/aws-sdk-go v1.51.23
 	github.com/mmcdole/gofeed v1.3.0
-	github.com/sfomuseum/go-activitypub v0.0.0-20240315191453-0b9bc2028b9a
+	github.com/sfomuseum/go-activitypub v0.0.0-20240418004319-3fc59ac809a6
 	github.com/sfomuseum/go-flags v0.10.0
 	gocloud.dev v0.37.0
 )

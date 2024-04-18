@@ -148,6 +148,8 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 					return fmt.Errorf("Failed to add post, %w", err)
 				}
 
+				// To do: derive mentions (posts_tags)
+				
 				deliver_opts := &activitypub.DeliverPostToFollowersOptions{
 					AccountsDatabase:   accounts_db,
 					FollowersDatabase:  followers_db,

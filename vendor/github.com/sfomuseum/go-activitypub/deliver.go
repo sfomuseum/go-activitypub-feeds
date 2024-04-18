@@ -18,6 +18,7 @@ type DeliverPostOptions struct {
 	PostTags           []*PostTag         `json:"post_tags"`
 	URIs               *uris.URIs         `json:"uris"`
 	DeliveriesDatabase DeliveriesDatabase `json:"deliveries_database,omitempty"`
+	MaxAttempts        int                `json:"max_attempts"`
 }
 
 type DeliverPostToFollowersOptions struct {
@@ -28,6 +29,7 @@ type DeliverPostToFollowersOptions struct {
 	DeliveryQueue      DeliveryQueue
 	Post               *Post
 	PostTags           []*PostTag `json:"post_tags"`
+	MaxAttempts        int        `json:"max_attempts"`
 	URIs               *uris.URIs
 }
 
@@ -40,8 +42,6 @@ func DeliverPostToFollowers(ctx context.Context, opts *DeliverPostToFollowersOpt
 	}
 
 	followers_cb := func(ctx context.Context, follower_uri string) error {
-
-		slog.Info("DELIVER", "uri", follower_uri)
 
 		already_delivered := false
 
@@ -72,6 +72,7 @@ func DeliverPostToFollowers(ctx context.Context, opts *DeliverPostToFollowersOpt
 			PostTags:           opts.PostTags,
 			URIs:               opts.URIs,
 			DeliveriesDatabase: opts.DeliveriesDatabase,
+			MaxAttempts:        opts.MaxAttempts,
 		}
 
 		err = opts.DeliveryQueue.DeliverPost(ctx, post_opts)
@@ -110,7 +111,31 @@ func DeliverPost(ctx context.Context, opts *DeliverPostOptions) error {
 	logger = logger.With("from", opts.From.Id)
 	logger = logger.With("to", opts.To)
 
-	logger.Debug("Deliver post")
+	logger.Debug("Deliver post", "max attempts", opts.MaxAttempts)
+
+	if opts.MaxAttempts > 0 {
+
+		count_attempts := 0
+
+		deliveries_cb := func(ctx context.Context, d *Delivery) error {
+			count_attempts += 1
+			return nil
+		}
+
+		err := opts.DeliveriesDatabase.GetDeliveriesWithPostIdAndRecipient(ctx, opts.Post.Id, opts.To, deliveries_cb)
+
+		if err != nil {
+			logger.Error("Failed to count deliveries for post ID and recipient", "error", err)
+			return fmt.Errorf("Failed to count deliveries for post ID and recipient, %w", err)
+		}
+
+		logger.Debug("Deliveries attempted", "count", count_attempts)
+
+		if count_attempts >= opts.MaxAttempts {
+			logger.Warn("Post has met or exceed max delivery attempts threshold", "max", opts.MaxAttempts, "count", count_attempts)
+			return nil
+		}
+	}
 
 	// Sort out dealing with Snowflake errors sooner...
 	delivery_id, _ := id.NewId()
@@ -135,7 +160,7 @@ func DeliverPost(ctx context.Context, opts *DeliverPostOptions) error {
 		d.Completed = ts
 
 		logger.Info("Add delivery for post", "delivery id", d.PostId, "recipient", d.Recipient, "success", d.Success)
-		
+
 		err := opts.DeliveriesDatabase.AddDelivery(ctx, d)
 
 		if err != nil {
@@ -149,7 +174,6 @@ func DeliverPost(ctx context.Context, opts *DeliverPostOptions) error {
 		d.Error = err.Error()
 		return fmt.Errorf("Failed to derive note from post, %w", err)
 	}
-
 
 	from_uri := opts.From.AccountURL(ctx, opts.URIs).String()
 
