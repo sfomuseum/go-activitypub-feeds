@@ -50,6 +50,14 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer posts_db.Close(ctx)
 
+	post_tags_db, err := activitypub.NewPostTagsDatabase(ctx, opts.PostTagsDatabaseURI)
+
+	if err != nil {
+		return fmt.Errorf("Failed to create instantiate post tags database, %w", err)
+	}
+
+	defer post_tags_db.Close(ctx)
+
 	followers_db, err := activitypub.NewFollowersDatabase(ctx, opts.FollowersDatabaseURI)
 
 	if err != nil {
@@ -136,26 +144,25 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 				body := fmt.Sprintf(`%s<br/><br /><a href="%s">%s</a>`, item.Title, item.Link, item.Link)
 
-				post, err := activitypub.NewPost(ctx, acct, body)
-
-				if err != nil {
-					return fmt.Errorf("Failed to create new post, %w", err)
+				post_opts := &activitypub.AddPostOptions{
+					URIs:             opts.URIs,
+					PostsDatabase:    posts_db,
+					PostTagsDatabase: post_tags_db,
 				}
 
-				err = posts_db.AddPost(ctx, post)
+				post, post_tags, err := activitypub.AddPost(ctx, post_opts, acct, body)
 
 				if err != nil {
-					return fmt.Errorf("Failed to add post, %w", err)
+					return fmt.Errorf("Failed to add new post, %w", err)
 				}
 
-				// To do: derive mentions (posts_tags)
-				
 				deliver_opts := &activitypub.DeliverPostToFollowersOptions{
 					AccountsDatabase:   accounts_db,
 					FollowersDatabase:  followers_db,
 					DeliveriesDatabase: deliveries_db,
 					DeliveryQueue:      delivery_q,
 					Post:               post,
+					PostTags:           post_tags,
 					URIs:               opts.URIs,
 				}
 

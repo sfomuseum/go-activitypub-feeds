@@ -28,7 +28,7 @@ var DynamoDBFeedsPublicationsLogsTable = &dynamodb.CreateTableInput{
 		{
 			AttributeName: aws.String("Published"),
 			AttributeType: aws.String("N"),
-		},		
+		},
 	},
 	GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
 		{
@@ -62,7 +62,7 @@ var DynamoDBFeedsPublicationsLogsTable = &dynamodb.CreateTableInput{
 			Projection: &dynamodb.Projection{
 				ProjectionType: aws.String("KEYS_ONLY"),
 			},
-		},		
+		},
 		{
 			IndexName: aws.String("by_published"),
 			KeySchema: []*dynamodb.KeySchemaElement{
@@ -74,7 +74,7 @@ var DynamoDBFeedsPublicationsLogsTable = &dynamodb.CreateTableInput{
 			Projection: &dynamodb.Projection{
 				ProjectionType: aws.String("KEYS_ONLY"),
 			},
-		},		
+		},
 	},
 	BillingMode: BILLING_MODE,
 	TableName:   &FEEDS_TABLE_NAME,
