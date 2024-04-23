@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-lambda-go v1.47.0
 	github.com/aws/aws-sdk-go v1.51.24
 	github.com/mmcdole/gofeed v1.3.0
-	github.com/sfomuseum/go-activitypub v0.0.0-20240418212719-096ccd88a5a7
+	github.com/sfomuseum/go-activitypub v0.0.0-20240423205247-32f796d73362
 	github.com/sfomuseum/go-flags v0.10.0
 	gocloud.dev v0.37.0
 )
@@ -63,7 +63,7 @@ require (
 	github.com/sfomuseum/runtimevar v1.2.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

@@ -278,7 +278,7 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 ## explicit; go 1.12
 github.com/modern-go/reflect2
-# github.com/sfomuseum/go-activitypub v0.0.0-20240418212719-096ccd88a5a7
+# github.com/sfomuseum/go-activitypub v0.0.0-20240423205247-32f796d73362
 ## explicit; go 1.22.2
 github.com/sfomuseum/go-activitypub
 github.com/sfomuseum/go-activitypub/ap
@@ -358,7 +358,7 @@ golang.org/x/crypto/ripemd160
 golang.org/x/crypto/sha3
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/net v0.22.0
+# golang.org/x/net v0.23.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom

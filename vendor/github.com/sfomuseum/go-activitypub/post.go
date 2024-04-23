@@ -69,8 +69,6 @@ func AddPost(ctx context.Context, opts *AddPostOptions, acct *Account, body stri
 
 	for _, name := range addrs_mentioned {
 
-		slog.Info("RETRIEVE", "name", name)
-
 		actor, err := RetrieveActor(ctx, name, opts.URIs.Insecure)
 
 		if err != nil {
@@ -78,9 +76,17 @@ func AddPost(ctx context.Context, opts *AddPostOptions, acct *Account, body stri
 			continue
 		}
 
-		href := actor.Id
+		mention_name := name
 
-		t, err := NewMention(ctx, p, name, href)
+		// https://github.com/sfomuseum/go-activitypub/issues/3
+		// mention_href := actor.URL
+
+		// And yet it appears to actually be {ACTOR}.id however this
+		// does not work (where "work" means open profile tab) in Ivory
+		// yet because... I have no idea
+		mention_href := actor.Id
+
+		t, err := NewMention(ctx, p, mention_name, mention_href)
 
 		if err != nil {
 			return nil, nil, fmt.Errorf("Failed to create mention for '%s', %w", name, err)
@@ -130,6 +136,7 @@ func NoteFromPost(ctx context.Context, uris_table *uris.URIs, acct *Account, pos
 	t := time.Unix(post.Created, 0)
 
 	tags := make([]*ap.Tag, len(post_tags))
+	cc := make([]string, 0)
 
 	for idx, pt := range post_tags {
 
@@ -140,6 +147,10 @@ func NoteFromPost(ctx context.Context, uris_table *uris.URIs, acct *Account, pos
 		}
 
 		tags[idx] = t
+
+		if pt.Type == "Mention" {
+			cc = append(cc, pt.Href)
+		}
 	}
 
 	n := &ap.Note{
@@ -154,6 +165,10 @@ func NoteFromPost(ctx context.Context, uris_table *uris.URIs, acct *Account, pos
 		InReplyTo: post.InReplyTo,
 		Tags:      tags,
 		URL:       post_url.String(),
+	}
+
+	if len(cc) > 0 {
+		n.Cc = cc
 	}
 
 	return n, nil
