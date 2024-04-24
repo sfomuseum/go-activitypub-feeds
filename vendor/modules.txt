@@ -35,7 +35,7 @@ github.com/aws/aws-lambda-go/lambda
 github.com/aws/aws-lambda-go/lambda/handlertrace
 github.com/aws/aws-lambda-go/lambda/messages
 github.com/aws/aws-lambda-go/lambdacontext
-# github.com/aws/aws-sdk-go v1.51.24
+# github.com/aws/aws-sdk-go v1.51.28
 ## explicit; go 1.19
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/auth/bearer
@@ -278,7 +278,7 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 ## explicit; go 1.12
 github.com/modern-go/reflect2
-# github.com/sfomuseum/go-activitypub v0.0.0-20240423205247-32f796d73362
+# github.com/sfomuseum/go-activitypub v0.0.0-20240424221820-13caf9e46080
 ## explicit; go 1.22.2
 github.com/sfomuseum/go-activitypub
 github.com/sfomuseum/go-activitypub/ap
