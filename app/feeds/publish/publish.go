@@ -17,7 +17,8 @@ import (
 )
 
 type itemTemplateVars struct {
-	Item *gofeed.Item
+	FeedURL string
+	Item    *gofeed.Item
 }
 
 func Run(ctx context.Context, logger *slog.Logger) error {
@@ -150,7 +151,8 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 				}
 
 				vars := itemTemplateVars{
-					Item: item,
+					FeedURL: feed_url,
+					Item:    item,
 				}
 
 				var buf bytes.Buffer
@@ -166,11 +168,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 				body := buf.String()
 
-				// This could be made... better
-				// body := item.Content
-				// body := fmt.Sprintf(`<div xmlns="http://www.w3.org/1999/xhtml" style="text-align:left;">%s</div>`, item.Content)
-				// body := fmt.Sprintf(`<a href="%s">%s</a><br />%s`, item.Link, item.Link, item.Title)
-				// body := fmt.Sprintf(`%s<br/><br /><a href="%s">%s</a>`, item.Title, item.Link, item.Link)
+				slog.Debug("Feed item", "feed", feed_url, "item", guid, "body", body)
 
 				post_opts := &activitypub.AddPostOptions{
 					URIs:             opts.URIs,

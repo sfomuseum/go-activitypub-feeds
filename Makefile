@@ -13,6 +13,9 @@ MESSAGES_DB_URI=awsdynamodb://$(TABLE_PREFIX)messages?partition_key=Id&allow_sca
 DELIVERIES_DB_URI=awsdynamodb://$(TABLE_PREFIX)deliveries?partition_key=Id&allow_scans=true&local=true
 FEEDS_DB_URI=awsdynamodb://$(TABLE_PREFIX)feeds_publication_logs?partition_key=Id&allow_scans=true&local=true
 
+cli:
+	go build -mod $(GOMOD) -ldflags="$(LDFLAGS)" -o bin/publish-feeds cmd/publish-feeds/main.go
+
 publish:
 	go run cmd/publish-feeds/main.go \
 		-accounts-database-uri '$(ACCOUNTS_DB_URI)' \
