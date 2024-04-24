@@ -4,7 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"html/template"
 
+	"github.com/sfomuseum/go-activitypub-feeds/templates/html"
 	"github.com/sfomuseum/go-activitypub/uris"
 	"github.com/sfomuseum/go-flags/flagset"
 )
@@ -23,6 +25,7 @@ type RunOptions struct {
 	URIs                            *uris.URIs
 	Verbose                         bool
 	MaxPostsPerFeed                 int
+	Templates                       *template.Template
 }
 
 func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, error) {
@@ -39,6 +42,12 @@ func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, err
 	uris_table.Hostname = hostname
 	uris_table.Insecure = insecure
 
+	t, err := html.LoadTemplates(ctx, html.FS)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load templates, %w", err)
+	}
+
 	opts := &RunOptions{
 		AccountsDatabaseURI:             accounts_database_uri,
 		FeedsPublicationLogsDatabaseURI: feeds_publication_logs_database_uri,
@@ -53,6 +62,7 @@ func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, err
 		MaxPostsPerFeed:                 max_posts_per_feed,
 		URIs:                            uris_table,
 		Verbose:                         verbose,
+		Templates:                       t,
 	}
 
 	return opts, nil

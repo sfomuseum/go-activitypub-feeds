@@ -1,6 +1,8 @@
 package publish
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -13,6 +15,10 @@ import (
 	"github.com/sfomuseum/go-activitypub-feeds"
 	ap_slog "github.com/sfomuseum/go-activitypub/slog"
 )
+
+type itemTemplateVars struct {
+	Item *gofeed.Item
+}
 
 func Run(ctx context.Context, logger *slog.Logger) error {
 	fs := DefaultFlagSet()
@@ -94,6 +100,12 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 		return fmt.Errorf("Failed to retrieve account %s, %w", opts.AccountName, err)
 	}
 
+	item_t := opts.Templates.Lookup("feed_item")
+
+	if item_t == nil {
+		return fmt.Errorf("Failed to load 'feed_item' template, missing")
+	}
+
 	// START OF put me... somewhere?
 	run := func(ctx context.Context) error {
 
@@ -137,12 +149,28 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 					continue
 				}
 
+				vars := itemTemplateVars{
+					Item: item,
+				}
+
+				var buf bytes.Buffer
+				wr := bufio.NewWriter(&buf)
+
+				err = item_t.Execute(wr, vars)
+
+				if err != nil {
+					return fmt.Errorf("Failed to render template for %s#%s, %w", feed_url, guid, err)
+				}
+
+				wr.Flush()
+
+				body := buf.String()
+
 				// This could be made... better
 				// body := item.Content
 				// body := fmt.Sprintf(`<div xmlns="http://www.w3.org/1999/xhtml" style="text-align:left;">%s</div>`, item.Content)
 				// body := fmt.Sprintf(`<a href="%s">%s</a><br />%s`, item.Link, item.Link, item.Title)
-
-				body := fmt.Sprintf(`%s<br/><br /><a href="%s">%s</a>`, item.Title, item.Link, item.Link)
+				// body := fmt.Sprintf(`%s<br/><br /><a href="%s">%s</a>`, item.Title, item.Link, item.Link)
 
 				post_opts := &activitypub.AddPostOptions{
 					URIs:             opts.URIs,

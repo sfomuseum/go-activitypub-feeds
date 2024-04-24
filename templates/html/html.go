@@ -4,7 +4,7 @@ import (
 	"context"
 	"embed"
 	"io/fs"
-	
+
 	sfomuseum_html "github.com/sfomuseum/go-template/html"
 	"html/template"
 )
