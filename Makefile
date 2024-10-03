@@ -3,15 +3,15 @@ LDFLAGS=-s -w
 
 TABLE_PREFIX=
 
-ACCOUNTS_DB_URI=awsdynamodb://$(TABLE_PREFIX)accounts?partition_key=Id&allow_scans=true&local=true
-FOLLOWING_DB_URI=awsdynamodb://$(TABLE_PREFIX)following?partition_key=Id&allow_scans=true&local=true
-FOLLOWERS_DB_URI=awsdynamodb://$(TABLE_PREFIX)followers?partition_key=Id&allow_scans=true&local=true
-BLOCKS_DB_URI=awsdynamodb://$(TABLE_PREFIX)blocks?partition_key=Id&allow_scans=true&local=true
-NOTES_DB_URI=awsdynamodb://$(TABLE_PREFIX)notes?partition_key=Id&allow_scans=true&local=true
-POSTS_DB_URI=awsdynamodb://$(TABLE_PREFIX)posts?partition_key=Id&allow_scans=true&local=true
-MESSAGES_DB_URI=awsdynamodb://$(TABLE_PREFIX)messages?partition_key=Id&allow_scans=true&local=true
-DELIVERIES_DB_URI=awsdynamodb://$(TABLE_PREFIX)deliveries?partition_key=Id&allow_scans=true&local=true
-FEEDS_DB_URI=awsdynamodb://$(TABLE_PREFIX)feeds_publication_logs?partition_key=Id&allow_scans=true&local=true
+ACCOUNTS_DB_URI=awsdynamodb://$(TABLE_PREFIX)accounts?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+FOLLOWING_DB_URI=awsdynamodb://$(TABLE_PREFIX)following?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+FOLLOWERS_DB_URI=awsdynamodb://$(TABLE_PREFIX)followers?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+BLOCKS_DB_URI=awsdynamodb://$(TABLE_PREFIX)blocks?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+NOTES_DB_URI=awsdynamodb://$(TABLE_PREFIX)notes?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+POSTS_DB_URI=awsdynamodb://$(TABLE_PREFIX)posts?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+MESSAGES_DB_URI=awsdynamodb://$(TABLE_PREFIX)messages?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+DELIVERIES_DB_URI=awsdynamodb://$(TABLE_PREFIX)deliveries?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
+FEEDS_DB_URI=awsdynamodb://$(TABLE_PREFIX)feeds_publication_logs?partition_key=Id&allow_scans=true&local=true&region=localhost&credentials=anon:
 
 cli:
 	go build -mod $(GOMOD) -ldflags="$(LDFLAGS)" -o bin/publish-feeds cmd/publish-feeds/main.go
@@ -33,7 +33,7 @@ dynamo-tables-local:
 	go run -mod vendor cmd/create-dynamodb-tables/main.go \
 		-refresh \
 		-table-prefix '$(TABLE_PREFIX)' \
-		-dynamodb-client-uri 'awsdynamodb://?local=true'
+		-dynamodb-client-uri 'awsdynamodb://?local=true&region=localhost&credentials=anon:'
 
 lambda:
 	if test -f bootstrap; then rm -f bootstrap; fi

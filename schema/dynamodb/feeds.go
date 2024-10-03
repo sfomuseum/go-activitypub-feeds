@@ -1,78 +1,79 @@
 package dynamodb
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 var DynamoDBFeedsPublicationsLogsTable = &dynamodb.CreateTableInput{
-	KeySchema: []*dynamodb.KeySchemaElement{
+	KeySchema: []types.KeySchemaElement{
 		{
 			AttributeName: aws.String("Id"), // partition key
-			KeyType:       aws.String("HASH"),
+			KeyType:       "HASH",
 		},
 	},
-	AttributeDefinitions: []*dynamodb.AttributeDefinition{
+	AttributeDefinitions: []types.AttributeDefinition{
 		{
 			AttributeName: aws.String("Id"),
-			AttributeType: aws.String("N"),
+			AttributeType: "N",
 		},
 		{
 			AttributeName: aws.String("AccountId"),
-			AttributeType: aws.String("N"),
+			AttributeType: "N",
 		},
 		{
 			AttributeName: aws.String("FeedURL"),
-			AttributeType: aws.String("S"),
+			AttributeType: "S",
 		},
 		{
 			AttributeName: aws.String("Published"),
-			AttributeType: aws.String("N"),
+			AttributeType: "N",
 		},
 	},
-	GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+	GlobalSecondaryIndexes: []types.GlobalSecondaryIndex{
 		{
 			IndexName: aws.String("account_feed"),
-			KeySchema: []*dynamodb.KeySchemaElement{
+			KeySchema: []types.KeySchemaElement{
 				{
 					AttributeName: aws.String("AccountId"),
-					KeyType:       aws.String("HASH"),
+					KeyType:       "HASH",
 				},
 				{
 					AttributeName: aws.String("FeedURL"),
-					KeyType:       aws.String("RANGE"),
+					KeyType:       "RANGE",
 				},
 			},
-			Projection: &dynamodb.Projection{
-				ProjectionType: aws.String("KEYS_ONLY"),
+			Projection: &types.Projection{
+				ProjectionType: "KEYS_ONLY",
 			},
 		},
 		{
 			IndexName: aws.String("by_feed"),
-			KeySchema: []*dynamodb.KeySchemaElement{
+			KeySchema: []types.KeySchemaElement{
 				{
 					AttributeName: aws.String("FeedURL"),
-					KeyType:       aws.String("HASH"),
+					KeyType:       "HASH",
 				},
 				{
 					AttributeName: aws.String("Published"),
-					KeyType:       aws.String("RANGE"),
+					KeyType:       "RANGE",
 				},
 			},
-			Projection: &dynamodb.Projection{
-				ProjectionType: aws.String("KEYS_ONLY"),
+			Projection: &types.Projection{
+				ProjectionType: "KEYS_ONLY",
 			},
 		},
 		{
 			IndexName: aws.String("by_published"),
-			KeySchema: []*dynamodb.KeySchemaElement{
+			KeySchema: []types.KeySchemaElement{
 				{
 					AttributeName: aws.String("Published"),
-					KeyType:       aws.String("HASH"),
+					KeyType:       "HASH",
 				},
 			},
-			Projection: &dynamodb.Projection{
-				ProjectionType: aws.String("KEYS_ONLY"),
+			Projection: &types.Projection{
+				ProjectionType: "KEYS_ONLY",
 			},
 		},
 	},

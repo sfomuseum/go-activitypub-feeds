@@ -7,8 +7,8 @@ import (
 	"log/slog"
 
 	aa_dynamodb "github.com/aaronland/go-aws-dynamodb"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	ap_dynamodb "github.com/sfomuseum/go-activitypub-feeds/schema/dynamodb"
 )
 
@@ -32,7 +32,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	slog.SetDefault(logger)
 
-	cl, err := aa_dynamodb.NewClientWithURI(ctx, opts.DynamodbClientURI)
+	cl, err := aa_dynamodb.NewClient(ctx, opts.DynamodbClientURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create dynamodb client, %w", err)
@@ -60,5 +60,5 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 		Refresh: opts.Refresh,
 	}
 
-	return aa_dynamodb.CreateTables(cl, create_opts)
+	return aa_dynamodb.CreateTables(ctx, cl, create_opts)
 }
