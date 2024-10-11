@@ -12,6 +12,7 @@ type RunOptions struct {
 	Refresh           bool
 	DynamodbClientURI string
 	TablePrefix       string
+	Verbose           bool
 }
 
 func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, error) {
@@ -28,6 +29,7 @@ func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, err
 		Refresh:           refresh,
 		DynamodbClientURI: dynamodb_client_uri,
 		TablePrefix:       table_prefix,
+		Verbose:           verbose,
 	}
 
 	return opts, nil

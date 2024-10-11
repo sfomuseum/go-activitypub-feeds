@@ -25,6 +25,7 @@ type RunOptions struct {
 	URIs                            *uris.URIs
 	Verbose                         bool
 	MaxPostsPerFeed                 int
+	MaxAttempts                     int
 	Templates                       *template.Template
 }
 

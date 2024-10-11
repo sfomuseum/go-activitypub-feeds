@@ -11,9 +11,11 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/mmcdole/gofeed"
-	"github.com/sfomuseum/go-activitypub"
+	// "github.com/sfomuseum/go-activitypub"
 	"github.com/sfomuseum/go-activitypub-feeds"
-	ap_slog "github.com/sfomuseum/go-activitypub/slog"
+	"github.com/sfomuseum/go-activitypub/database"
+	"github.com/sfomuseum/go-activitypub/posts"
+	"github.com/sfomuseum/go-activitypub/queue"
 )
 
 type itemTemplateVars struct {
@@ -21,12 +23,12 @@ type itemTemplateVars struct {
 	Item    *gofeed.Item
 }
 
-func Run(ctx context.Context, logger *slog.Logger) error {
+func Run(ctx context.Context) error {
 	fs := DefaultFlagSet()
-	return RunWithFlagSet(ctx, fs, logger)
+	return RunWithFlagSet(ctx, fs)
 }
 
-func RunWithFlagSet(ctx context.Context, fs *flag.FlagSet, logger *slog.Logger) error {
+func RunWithFlagSet(ctx context.Context, fs *flag.FlagSet) error {
 
 	opts, err := OptionsFromFlagSet(ctx, fs)
 
@@ -34,14 +36,19 @@ func RunWithFlagSet(ctx context.Context, fs *flag.FlagSet, logger *slog.Logger) 
 		return fmt.Errorf("Failed to derive options from flagset, %w", err)
 	}
 
-	return RunWithOptions(ctx, opts, logger)
+	return RunWithOptions(ctx, opts)
 }
 
-func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) error {
+func RunWithOptions(ctx context.Context, opts *RunOptions) error {
 
-	ap_slog.ConfigureLogger(logger, opts.Verbose)
+	if opts.Verbose {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+		slog.Debug("Verbose logging enabled")
+	}
 
-	accounts_db, err := activitypub.NewAccountsDatabase(ctx, opts.AccountsDatabaseURI)
+	// logger := slog.Default()
+
+	accounts_db, err := database.NewAccountsDatabase(ctx, opts.AccountsDatabaseURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create new database, %w", err)
@@ -49,7 +56,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer accounts_db.Close(ctx)
 
-	posts_db, err := activitypub.NewPostsDatabase(ctx, opts.PostsDatabaseURI)
+	posts_db, err := database.NewPostsDatabase(ctx, opts.PostsDatabaseURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create instantiate posts database, %w", err)
@@ -57,7 +64,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer posts_db.Close(ctx)
 
-	post_tags_db, err := activitypub.NewPostTagsDatabase(ctx, opts.PostTagsDatabaseURI)
+	post_tags_db, err := database.NewPostTagsDatabase(ctx, opts.PostTagsDatabaseURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create instantiate post tags database, %w", err)
@@ -65,7 +72,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer post_tags_db.Close(ctx)
 
-	followers_db, err := activitypub.NewFollowersDatabase(ctx, opts.FollowersDatabaseURI)
+	followers_db, err := database.NewFollowersDatabase(ctx, opts.FollowersDatabaseURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create instantiate followers database, %w", err)
@@ -73,7 +80,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer followers_db.Close(ctx)
 
-	deliveries_db, err := activitypub.NewDeliveriesDatabase(ctx, opts.DeliveriesDatabaseURI)
+	deliveries_db, err := database.NewDeliveriesDatabase(ctx, opts.DeliveriesDatabaseURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create instantiate deliveries database, %w", err)
@@ -89,7 +96,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 	defer feeds_db.Close(ctx)
 
-	delivery_q, err := activitypub.NewDeliveryQueue(ctx, opts.DeliveryQueueURI)
+	delivery_q, err := queue.NewDeliveryQueue(ctx, opts.DeliveryQueueURI)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create new delivery queue, %w", err)
@@ -139,6 +146,10 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 				guid := item.GUID
 
+				logger := slog.Default()
+				logger = logger.With("feed", feed_url)
+				logger = logger.With("item", guid)
+
 				is_published, err := feeds_db.IsPublished(ctx, acct.Id, feed_url, guid)
 
 				if err != nil {
@@ -146,7 +157,7 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 				}
 
 				if is_published {
-					logger.Debug("Already published", "feed", feed_url, "item", guid)
+					logger.Debug("Item already published")
 					continue
 				}
 
@@ -168,31 +179,44 @@ func RunWithOptions(ctx context.Context, opts *RunOptions, logger *slog.Logger) 
 
 				body := buf.String()
 
-				slog.Debug("Feed item", "feed", feed_url, "item", guid, "body", body)
+				logger.Debug("Post item", "body", body)
 
-				post_opts := &activitypub.AddPostOptions{
+				post_opts := &posts.AddPostOptions{
 					URIs:             opts.URIs,
 					PostsDatabase:    posts_db,
 					PostTagsDatabase: post_tags_db,
 				}
 
-				post, post_tags, err := activitypub.AddPost(ctx, post_opts, acct, body)
+				post, mentions, err := posts.AddPost(ctx, post_opts, acct, body)
 
 				if err != nil {
-					return fmt.Errorf("Failed to add new post, %w", err)
+					return fmt.Errorf("Failed to add post, %w", err)
 				}
 
-				deliver_opts := &activitypub.DeliverPostToFollowersOptions{
+				logger = logger.With("post id", post.Id)
+
+				activity, err := posts.ActivityFromPost(ctx, opts.URIs, acct, post, mentions)
+
+				if err != nil {
+					return fmt.Errorf("Failed to create new (create) activity, %w", err)
+				}
+
+				logger = logger.With("activity id", activity.Id)
+
+				deliver_opts := &queue.DeliverActivityToFollowersOptions{
 					AccountsDatabase:   accounts_db,
 					FollowersDatabase:  followers_db,
 					DeliveriesDatabase: deliveries_db,
 					DeliveryQueue:      delivery_q,
-					Post:               post,
-					PostTags:           post_tags,
+					Activity:           activity,
+					PostId:             post.Id,
+					Mentions:           mentions,
 					URIs:               opts.URIs,
 				}
 
-				err = activitypub.DeliverPostToFollowers(ctx, deliver_opts)
+				logger.Debug("Deliver activity")
+
+				err = queue.DeliverActivityToFollowers(ctx, deliver_opts)
 
 				if err != nil {
 					return fmt.Errorf("Failed to deliver post, %w", err)
