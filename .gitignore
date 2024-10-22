@@ -3,3 +3,4 @@ bin
 work
 *.zip
 go.work*
+.DS_Store

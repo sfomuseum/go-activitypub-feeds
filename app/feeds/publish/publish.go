@@ -11,7 +11,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/mmcdole/gofeed"
-	// "github.com/sfomuseum/go-activitypub"
+	"github.com/sfomuseum/go-activitypub"
 	"github.com/sfomuseum/go-activitypub-feeds"
 	"github.com/sfomuseum/go-activitypub/database"
 	"github.com/sfomuseum/go-activitypub/posts"
@@ -51,10 +51,18 @@ func RunWithOptions(ctx context.Context, opts *RunOptions) error {
 	accounts_db, err := database.NewAccountsDatabase(ctx, opts.AccountsDatabaseURI)
 
 	if err != nil {
-		return fmt.Errorf("Failed to create new database, %w", err)
+		return fmt.Errorf("Failed to instantiate accounts database, %w", err)
 	}
 
 	defer accounts_db.Close(ctx)
+
+	activities_db, err := database.NewActivitiesDatabase(ctx, opts.ActivitiesDatabaseURI)
+
+	if err != nil {
+		return fmt.Errorf("Failed to instantiate activities database, %w", err)
+	}
+
+	defer activities_db.Close(ctx)
 
 	posts_db, err := database.NewPostsDatabase(ctx, opts.PostsDatabaseURI)
 
@@ -195,13 +203,29 @@ func RunWithOptions(ctx context.Context, opts *RunOptions) error {
 
 				logger = logger.With("post id", post.Id)
 
-				activity, err := posts.ActivityFromPost(ctx, opts.URIs, acct, post, mentions)
+				ap_activity, err := posts.ActivityFromPost(ctx, opts.URIs, acct, post, mentions)
 
 				if err != nil {
 					return fmt.Errorf("Failed to create new (create) activity, %w", err)
 				}
 
+				activity, err := activitypub.NewActivity(ctx, ap_activity)
+
+				if err != nil {
+					return fmt.Errorf("Failed to create AP wrapper, %w", err)
+				}
+
 				logger = logger.With("activity id", activity.Id)
+
+				activity.AccountId = acct.Id
+				activity.ActivityType = activitypub.PostActivityType
+				activity.ActivityTypeId = post.Id
+
+				err = activities_db.AddActivity(ctx, activity)
+
+				if err != nil {
+					return fmt.Errorf("Failed to add new activity, %w", err)
+				}
 
 				deliver_opts := &queue.DeliverActivityToFollowersOptions{
 					AccountsDatabase:   accounts_db,
@@ -209,7 +233,6 @@ func RunWithOptions(ctx context.Context, opts *RunOptions) error {
 					DeliveriesDatabase: deliveries_db,
 					DeliveryQueue:      delivery_q,
 					Activity:           activity,
-					PostId:             post.Id,
 					Mentions:           mentions,
 					URIs:               opts.URIs,
 				}
