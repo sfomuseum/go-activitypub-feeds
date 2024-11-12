@@ -8,6 +8,7 @@ import (
 )
 
 var accounts_database_uri string
+var activities_database_uri string
 var followers_database_uri string
 var deliveries_database_uri string
 var posts_database_uri string
@@ -29,9 +30,10 @@ var verbose bool
 
 func DefaultFlagSet() *flag.FlagSet {
 
-	fs := flagset.NewFlagSet("follow")
+	fs := flagset.NewFlagSet("publish")
 
 	fs.StringVar(&accounts_database_uri, "accounts-database-uri", "", "...")
+	fs.StringVar(&activities_database_uri, "activities-database-uri", "", "...")
 	fs.StringVar(&posts_database_uri, "posts-database-uri", "", "...")
 	fs.StringVar(&post_tags_database_uri, "post-tags-database-uri", "", "...")
 	fs.StringVar(&deliveries_database_uri, "deliveries-database-uri", "", "...")

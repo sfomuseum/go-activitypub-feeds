@@ -13,11 +13,12 @@ import (
 
 type RunOptions struct {
 	AccountsDatabaseURI             string
-	FeedsPublicationLogsDatabaseURI string
+	ActivitiesDatabaseURI           string
 	PostsDatabaseURI                string
 	PostTagsDatabaseURI             string
 	FollowersDatabaseURI            string
 	DeliveriesDatabaseURI           string
+	FeedsPublicationLogsDatabaseURI string
 	DeliveryQueueURI                string
 	AccountName                     string
 	Mode                            string
@@ -25,6 +26,7 @@ type RunOptions struct {
 	URIs                            *uris.URIs
 	Verbose                         bool
 	MaxPostsPerFeed                 int
+	MaxAttempts                     int
 	Templates                       *template.Template
 }
 
@@ -50,11 +52,12 @@ func OptionsFromFlagSet(ctx context.Context, fs *flag.FlagSet) (*RunOptions, err
 
 	opts := &RunOptions{
 		AccountsDatabaseURI:             accounts_database_uri,
-		FeedsPublicationLogsDatabaseURI: feeds_publication_logs_database_uri,
+		ActivitiesDatabaseURI:           activities_database_uri,
 		FollowersDatabaseURI:            followers_database_uri,
 		DeliveriesDatabaseURI:           deliveries_database_uri,
 		PostsDatabaseURI:                posts_database_uri,
 		PostTagsDatabaseURI:             post_tags_database_uri,
+		FeedsPublicationLogsDatabaseURI: feeds_publication_logs_database_uri,
 		DeliveryQueueURI:                delivery_queue_uri,
 		AccountName:                     account_name,
 		Mode:                            mode,

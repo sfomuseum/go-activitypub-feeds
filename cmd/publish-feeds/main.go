@@ -2,21 +2,17 @@ package main
 
 import (
 	"context"
-	"os"
+	"log"
 
 	"github.com/sfomuseum/go-activitypub-feeds/app/feeds/publish"
-	"github.com/sfomuseum/go-activitypub/slog"
 )
 
 func main() {
 
 	ctx := context.Background()
-	logger := slog.Default()
-
-	err := publish.Run(ctx, logger)
+	err := publish.Run(ctx)
 
 	if err != nil {
-		logger.Error("Failed to publish feeds", "error", err)
-		os.Exit(1)
+		log.Fatalf("Failed to publish feeds, %v", err)
 	}
 }
