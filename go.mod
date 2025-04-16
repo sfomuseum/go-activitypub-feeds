@@ -60,7 +60,7 @@ require (
 	github.com/mmcdole/goxpp v1.1.1-0.20240225020742-a0c311522b23 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/redis/go-redis/v9 v9.7.0 // indirect
+	github.com/redis/go-redis/v9 v9.7.3 // indirect
 	github.com/sfomuseum/go-pubsub v0.0.19 // indirect
 	github.com/sfomuseum/iso8601duration v1.1.0 // indirect
 	github.com/sfomuseum/runtimevar v1.2.1 // indirect
