@@ -47,6 +47,11 @@ type Options struct {
 	// clients initial default settings.
 	DefaultsMode aws.DefaultsMode
 
+	// Disables SDK clock skew correction. When set, the SDK will not adjust request
+	// signing timestamps to compensate for clock drift between the client and the
+	// service.
+	DisableClockSkewCorrection bool
+
 	// Allows you to disable the client's validation of response integrity using CRC32
 	// checksum. Enabled by default.
 	DisableValidateResponseChecksum bool
@@ -72,8 +77,7 @@ type Options struct {
 	// the client option BaseEndpoint instead.
 	EndpointResolver EndpointResolver
 
-	// Resolves the endpoint used for a particular service operation. This should be
-	// used over the deprecated EndpointResolver.
+	// Resolves the endpoint used for a particular service operation.
 	EndpointResolverV2 EndpointResolverV2
 
 	// Signature Version 4 (SigV4) Signer
@@ -137,12 +141,18 @@ type Options struct {
 	// implementation if nil.
 	HTTPClient HTTPClient
 
+	// Client registry of operation interceptors.
+	Interceptors smithyhttp.InterceptorRegistry
+
 	// The auth scheme resolver which determines how to authenticate for each
 	// operation.
 	AuthSchemeResolver AuthSchemeResolver
 
 	// The list of auth schemes supported by the client.
 	AuthSchemes []smithyhttp.AuthScheme
+
+	// Priority list of preferred auth scheme names (e.g. sigv4a).
+	AuthSchemePreference []string
 }
 
 // Copy creates a clone where the APIOptions list is deep copied.
@@ -150,6 +160,7 @@ func (o Options) Copy() Options {
 	to := o
 	to.APIOptions = make([]func(*middleware.Stack) error, len(o.APIOptions))
 	copy(to.APIOptions, o.APIOptions)
+	to.Interceptors = o.Interceptors.Copy()
 
 	return to
 }

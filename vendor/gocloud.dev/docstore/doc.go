@@ -246,19 +246,19 @@
 //
 // The errors returned from this package can be inspected in several ways:
 //
-// The Code function from https://gocloud.dev/gcerrors will return an error code, also
-// defined in that package, when invoked on an error.
+// The Code function from gocloud.dev/gcerrors will return an error code, also
+// defined in that package, when invoked on an error. Alternatively, errors.Is
+// can be used with the code-specific errors from the same package (e.g., ErrInternal).
 //
-// The Collection.ErrorAs method can retrieve the underlying driver error from
-// the returned error. See the specific driver's package doc for the supported
-// types.
+// The Collection.ErrorAs method can retrieve the driver error underlying the returned
+// error. Alternatively, errors.As can be used in the same way.
 //
-// # OpenCensus Integration
+// # OpenTelemetry Integration
 //
-// OpenCensus supports tracing and metric collection for multiple languages and
-// backend providers. See https://opencensus.io.
+// OpenTelemetry supports tracing, metrics, and logs collection for multiple languages and
+// backend providers. See https://opentelemetry.io.
 //
-// This API collects OpenCensus traces and metrics for the following methods:
+// This API collects OpenTelemetry traces and metrics for the following methods:
 //   - ActionList.Do
 //   - Query.Get (for the first query only; drivers may make additional calls while iterating over results)
 //
@@ -270,10 +270,10 @@
 // by driver and method.
 // For example, "gocloud.dev/docstore/latency".
 //
-// To enable trace collection in your application, see "Configure Exporter" at
-// https://opencensus.io/quickstart/go/tracing.
-// To enable metric collection in your application, see "Exporting stats" at
-// https://opencensus.io/quickstart/go/metrics.
+// To enable trace collection in your application, see the documentation at
+// https://opentelemetry.io/docs/instrumentation/go/getting-started/.
+// To enable metric collection in your application, see the documentation at
+// https://opentelemetry.io/docs/instrumentation/go/manual/.
 //
 // # GORM-like Code Generation
 //

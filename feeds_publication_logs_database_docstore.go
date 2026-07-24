@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	aa_docstore "github.com/aaronland/gocloud-docstore"
+	aa_docstore "github.com/aaronland/gocloud/docstore"
 	gc_docstore "gocloud.dev/docstore"
 )
 

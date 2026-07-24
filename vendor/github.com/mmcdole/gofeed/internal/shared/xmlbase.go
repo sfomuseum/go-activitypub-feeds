@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	xpp "github.com/mmcdole/goxpp"
+	xpp "github.com/mmcdole/goxpp/v2"
 	"golang.org/x/net/html"
 )
 
@@ -47,7 +47,7 @@ var (
 // NextTag is similar to goxpp's NextTag method except it wont throw an error
 // if the next immediate token isnt a Start/EndTag.  Instead, it will continue
 // to consume tokens until it hits a Start/EndTag or EndDocument.
-func NextTag(p *xpp.XMLPullParser) (event xpp.XMLEventType, err error) {
+func NextTag(p *xpp.Parser) (event xpp.EventType, err error) {
 	for {
 		event, err = p.Next()
 		if err != nil {
@@ -72,7 +72,7 @@ func NextTag(p *xpp.XMLPullParser) (event xpp.XMLEventType, err error) {
 		}
 
 		if event == xpp.EndDocument {
-			return event, fmt.Errorf("Failed to find NextTag before reaching the end of the document.")
+			return event, fmt.Errorf("failed to find NextTag before reaching the end of the document")
 		}
 
 	}
@@ -80,17 +80,15 @@ func NextTag(p *xpp.XMLPullParser) (event xpp.XMLEventType, err error) {
 }
 
 // resolve relative URI attributes according to xml:base
-func resolveAttrs(p *xpp.XMLPullParser) error {
-	for i, attr := range p.Attrs {
+func resolveAttrs(p *xpp.Parser) error {
+	for i, attr := range p.Attrs() {
 		lowerName := strings.ToLower(attr.Name.Local)
 		if uriAttrs[lowerName] {
-			absURL, err := XmlBaseResolveUrl(p.BaseStack.Top(), attr.Value)
-			if err != nil {
-				return err
+			absURL, err := XmlBaseResolveUrl(p.BaseURL(), attr.Value)
+			if err == nil && absURL != nil {
+				p.Attrs()[i].Value = absURL.String()
 			}
-			if absURL != nil {
-				p.Attrs[i].Value = absURL.String()
-			}
+			// Continue processing even if URL resolution fails (e.g., for non-HTTP URIs like at://)
 		}
 	}
 	return nil
@@ -98,7 +96,7 @@ func resolveAttrs(p *xpp.XMLPullParser) error {
 
 // resolve u relative to b
 func XmlBaseResolveUrl(b *url.URL, u string) (*url.URL, error) {
-	relURL, err := url.Parse(u)
+	relURL, err := url.Parse(strings.TrimLeft(u, " "))
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +105,33 @@ func XmlBaseResolveUrl(b *url.URL, u string) (*url.URL, error) {
 		return relURL, nil
 	}
 
-	if b.Path != "" && u != "" && b.Path[len(b.Path)-1] != '/' {
+	// Work on a copy: b is the live base held on the parser's stack, so
+	// appending "/" to it here would rewrite the base for every sibling
+	// resolved after the first relative URL in this scope.
+	base := *b
+	if base.Path != "" && u != "" && base.Path[len(base.Path)-1] != '/' {
 		// There's no reason someone would use a path in xml:base if they
 		// didn't mean for it to be a directory
-		b.Path = b.Path + "/"
+		base.Path = base.Path + "/"
 	}
-	absURL := b.ResolveReference(relURL)
+	absURL := base.ResolveReference(relURL)
 	return absURL, nil
+}
+
+// ResolveURLIfBase resolves s against base when an xml:base is in scope,
+// returning s unchanged when base is nil or resolution fails. Element-content
+// URLs (e.g. an RSS <link>) don't pass through resolveAttrs, so this lets them
+// be resolved the same way attribute URLs already are. Resolving only when a
+// base is present means URLs in feeds without xml:base are never round-tripped
+// through url.Parse and so are never normalized.
+func ResolveURLIfBase(base *url.URL, s string) string {
+	if base == nil || s == "" {
+		return s
+	}
+	if abs, err := XmlBaseResolveUrl(base, s); err == nil && abs != nil {
+		return abs.String()
+	}
+	return s
 }
 
 // Transforms html by resolving any relative URIs in attributes
@@ -142,7 +160,6 @@ func ResolveHTML(base *url.URL, relHTML string) (string, error) {
 					if absVal != nil && err == nil {
 						n.Attr[i].Val = absVal.String()
 					}
-					break
 				}
 			}
 		}

@@ -5,7 +5,6 @@ package dynamodb
 import (
 	"context"
 	"fmt"
-	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	internalEndpointDiscovery "github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery"
 	"github.com/aws/smithy-go/middleware"
@@ -135,6 +134,61 @@ type TransactWriteItemsInput struct {
 	noSmithyDocumentSerde
 }
 
+func (in *TransactWriteItemsInput) bindEndpointParams(p *EndpointParameters) {
+	func() {
+		v1 := in.TransactItems
+		var v2 [][]string
+		for _, v := range v1 {
+			v3 := v.ConditionCheck
+			var v4 *string
+			if v3 != nil {
+				v5 := v3.TableName
+				v4 = v5
+			}
+			v6 := v.Put
+			var v7 *string
+			if v6 != nil {
+				v8 := v6.TableName
+				v7 = v8
+			}
+			v9 := v.Delete
+			var v10 *string
+			if v9 != nil {
+				v11 := v9.TableName
+				v10 = v11
+			}
+			v12 := v.Update
+			var v13 *string
+			if v12 != nil {
+				v14 := v12.TableName
+				v13 = v14
+			}
+			v15 := []string{}
+			if v4 != nil {
+				v15 = append(v15, *v4)
+			}
+			if v7 != nil {
+				v15 = append(v15, *v7)
+			}
+			if v10 != nil {
+				v15 = append(v15, *v10)
+			}
+			if v13 != nil {
+				v15 = append(v15, *v13)
+			}
+			if v15 != nil {
+				v2 = append(v2, v15)
+			}
+		}
+		var v16 []string
+		for _, v := range v2 {
+			v16 = append(v16, v...)
+		}
+		p.ResourceArnList = v16
+	}()
+
+}
+
 type TransactWriteItemsOutput struct {
 
 	// The capacity units consumed by the entire TransactWriteItems operation. The
@@ -154,9 +208,6 @@ type TransactWriteItemsOutput struct {
 }
 
 func (c *Client) addOperationTransactWriteItemsMiddlewares(stack *middleware.Stack, options Options) (err error) {
-	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
-		return err
-	}
 	err = stack.Serialize.Add(&awsAwsjson10_serializeOpTransactWriteItems{}, middleware.After)
 	if err != nil {
 		return err
@@ -165,17 +216,8 @@ func (c *Client) addOperationTransactWriteItemsMiddlewares(stack *middleware.Sta
 	if err != nil {
 		return err
 	}
-	if err := addProtocolFinalizerMiddlewares(stack, options, "TransactWriteItems"); err != nil {
-		return fmt.Errorf("add protocol finalizers: %v", err)
-	}
 
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
-		return err
-	}
-	if err = addSetLoggerMiddleware(stack, options); err != nil {
-		return err
-	}
-	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
 	if err = addComputeContentLength(stack); err != nil {
@@ -187,19 +229,7 @@ func (c *Client) addOperationTransactWriteItemsMiddlewares(stack *middleware.Sta
 	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetry(stack, options); err != nil {
-		return err
-	}
-	if err = addRawResponseToMetadata(stack); err != nil {
-		return err
-	}
-	if err = addRecordResponseTiming(stack); err != nil {
-		return err
-	}
-	if err = addSpanRetryLoop(stack, options); err != nil {
-		return err
-	}
-	if err = addClientUserAgent(stack, options); err != nil {
+	if err = addRecordResponseTiming(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -209,15 +239,6 @@ func (c *Client) addOperationTransactWriteItemsMiddlewares(stack *middleware.Sta
 		return err
 	}
 	if err = addOpTransactWriteItemsDiscoverEndpointMiddleware(stack, options, c); err != nil {
-		return err
-	}
-	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
-		return err
-	}
-	if err = addTimeOffsetBuild(stack, c); err != nil {
-		return err
-	}
-	if err = addUserAgentRetryMode(stack, options); err != nil {
 		return err
 	}
 	if err = addUserAgentAccountIDEndpointMode(stack, options); err != nil {
@@ -232,10 +253,7 @@ func (c *Client) addOperationTransactWriteItemsMiddlewares(stack *middleware.Sta
 	if err = addOpTransactWriteItemsValidationMiddleware(stack); err != nil {
 		return err
 	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opTransactWriteItems(options.Region), middleware.Before); err != nil {
-		return err
-	}
-	if err = addRecursionDetection(stack); err != nil {
+	if err = stack.Initialize.Add(newServiceMetadataMiddleware(options.Region, "TransactWriteItems"), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -256,16 +274,7 @@ func (c *Client) addOperationTransactWriteItemsMiddlewares(stack *middleware.Sta
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanInitializeStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanInitializeEnd(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestEnd(stack); err != nil {
+	if err = addInterceptors(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -345,12 +354,4 @@ func (m *idempotencyToken_initializeOpTransactWriteItems) HandleInitialize(ctx c
 }
 func addIdempotencyToken_opTransactWriteItemsMiddleware(stack *middleware.Stack, cfg Options) error {
 	return stack.Initialize.Add(&idempotencyToken_initializeOpTransactWriteItems{tokenProvider: cfg.IdempotencyTokenProvider}, middleware.Before)
-}
-
-func newServiceMetadataMiddleware_opTransactWriteItems(region string) *awsmiddleware.RegisterServiceMetadata {
-	return &awsmiddleware.RegisterServiceMetadata{
-		Region:        region,
-		ServiceID:     ServiceID,
-		OperationName: "TransactWriteItems",
-	}
 }

@@ -5,7 +5,6 @@ package dynamodb
 import (
 	"context"
 	"fmt"
-	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	internalEndpointDiscovery "github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery"
 	"github.com/aws/smithy-go/middleware"
@@ -14,9 +13,6 @@ import (
 
 // Modifies the provisioned throughput settings, global secondary indexes, or
 // DynamoDB Streams settings for a given table.
-//
-// For global tables, this operation only applies to global tables using Version
-// 2019.11.21 (Current version).
 //
 // You can only perform one of the following operations at once:
 //
@@ -99,6 +95,35 @@ type UpdateTableInput struct {
 	// [Managing Global Secondary Indexes]: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.OnlineOps.html
 	GlobalSecondaryIndexUpdates []types.GlobalSecondaryIndexUpdate
 
+	// Controls the settings replication mode for a global table replica. This
+	// attribute can be defined using UpdateTable operation only on a regional table
+	// with values:
+	//
+	//   - ENABLED : Defines settings replication on a regional table to be used as a
+	//   source table for creating Multi-Account Global Table.
+	//
+	//   - DISABLED : Remove settings replication on a regional table. Settings
+	//   replication needs to be defined to ENABLED again in order to create a
+	//   Multi-Account Global Table using this table.
+	GlobalTableSettingsReplicationMode types.GlobalTableSettingsReplicationMode
+
+	// A list of witness updates for a MRSC global table. A witness provides a
+	// cost-effective alternative to a full replica in a MRSC global table by
+	// maintaining replicated change data written to global table replicas. You cannot
+	// perform read or write operations on a witness. For each witness, you can request
+	// one action:
+	//
+	//   - Create - add a new witness to the global table.
+	//
+	//   - Delete - remove a witness from the global table.
+	//
+	// You can create or delete only one witness per UpdateTable operation.
+	//
+	// For more information, see [Multi-Region strong consistency (MRSC)] in the Amazon DynamoDB Developer Guide
+	//
+	// [Multi-Region strong consistency (MRSC)]: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_HowItWorks.html#V2globaltables_HowItWorks.consistency-modes
+	GlobalTableWitnessUpdates []types.GlobalTableWitnessGroupUpdate
+
 	// Specifies the consistency mode for a new global table. This parameter is only
 	// valid when you create a global table by specifying one or more [Create]actions in the [ReplicaUpdates]
 	// action list.
@@ -106,20 +131,18 @@ type UpdateTableInput struct {
 	// You can specify one of the following consistency modes:
 	//
 	//   - EVENTUAL : Configures a new global table for multi-Region eventual
-	//   consistency. This is the default consistency mode for global tables.
+	//   consistency (MREC). This is the default consistency mode for global tables.
 	//
 	//   - STRONG : Configures a new global table for multi-Region strong consistency
-	//   (preview).
+	//   (MRSC).
 	//
-	// Multi-Region strong consistency (MRSC) is a new DynamoDB global tables
-	//   capability currently available in preview mode. For more information, see [Global tables multi-Region strong consistency].
-	//
-	// If you don't specify this parameter, the global table consistency mode defaults
-	// to EVENTUAL .
+	// If you don't specify this field, the global table consistency mode defaults to
+	// EVENTUAL . For more information about global tables consistency modes, see [Consistency modes] in
+	// DynamoDB developer guide.
 	//
 	// [ReplicaUpdates]: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_UpdateTable.html#DDB-UpdateTable-request-ReplicaUpdates
 	// [Create]: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_ReplicationGroupUpdate.html#DDB-Type-ReplicationGroupUpdate-Create
-	// [Global tables multi-Region strong consistency]: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/PreviewFeatures.html#multi-region-strong-consistency-gt
+	// [Consistency modes]: https://docs.aws.amazon.com/V2globaltables_HowItWorks.html#V2globaltables_HowItWorks.consistency-modes
 	MultiRegionConsistency types.MultiRegionConsistency
 
 	// Updates the maximum number of read and write units for the specified table in
@@ -131,9 +154,6 @@ type UpdateTableInput struct {
 	ProvisionedThroughput *types.ProvisionedThroughput
 
 	// A list of replica update actions (create, delete, or update) for the table.
-	//
-	// For global tables, this property only applies to global tables using Version
-	// 2019.11.21 (Current version).
 	ReplicaUpdates []types.ReplicationGroupUpdate
 
 	// The new server-side encryption settings for the specified table.
@@ -176,9 +196,6 @@ type UpdateTableOutput struct {
 }
 
 func (c *Client) addOperationUpdateTableMiddlewares(stack *middleware.Stack, options Options) (err error) {
-	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
-		return err
-	}
 	err = stack.Serialize.Add(&awsAwsjson10_serializeOpUpdateTable{}, middleware.After)
 	if err != nil {
 		return err
@@ -187,17 +204,8 @@ func (c *Client) addOperationUpdateTableMiddlewares(stack *middleware.Stack, opt
 	if err != nil {
 		return err
 	}
-	if err := addProtocolFinalizerMiddlewares(stack, options, "UpdateTable"); err != nil {
-		return fmt.Errorf("add protocol finalizers: %v", err)
-	}
 
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
-		return err
-	}
-	if err = addSetLoggerMiddleware(stack, options); err != nil {
-		return err
-	}
-	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
 	if err = addComputeContentLength(stack); err != nil {
@@ -209,19 +217,7 @@ func (c *Client) addOperationUpdateTableMiddlewares(stack *middleware.Stack, opt
 	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetry(stack, options); err != nil {
-		return err
-	}
-	if err = addRawResponseToMetadata(stack); err != nil {
-		return err
-	}
-	if err = addRecordResponseTiming(stack); err != nil {
-		return err
-	}
-	if err = addSpanRetryLoop(stack, options); err != nil {
-		return err
-	}
-	if err = addClientUserAgent(stack, options); err != nil {
+	if err = addRecordResponseTiming(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -233,15 +229,6 @@ func (c *Client) addOperationUpdateTableMiddlewares(stack *middleware.Stack, opt
 	if err = addOpUpdateTableDiscoverEndpointMiddleware(stack, options, c); err != nil {
 		return err
 	}
-	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
-		return err
-	}
-	if err = addTimeOffsetBuild(stack, c); err != nil {
-		return err
-	}
-	if err = addUserAgentRetryMode(stack, options); err != nil {
-		return err
-	}
 	if err = addUserAgentAccountIDEndpointMode(stack, options); err != nil {
 		return err
 	}
@@ -251,10 +238,7 @@ func (c *Client) addOperationUpdateTableMiddlewares(stack *middleware.Stack, opt
 	if err = addOpUpdateTableValidationMiddleware(stack); err != nil {
 		return err
 	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opUpdateTable(options.Region), middleware.Before); err != nil {
-		return err
-	}
-	if err = addRecursionDetection(stack); err != nil {
+	if err = stack.Initialize.Add(newServiceMetadataMiddleware(options.Region, "UpdateTable"), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -275,16 +259,7 @@ func (c *Client) addOperationUpdateTableMiddlewares(stack *middleware.Stack, opt
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanInitializeStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanInitializeEnd(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestEnd(stack); err != nil {
+	if err = addInterceptors(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -331,12 +306,4 @@ func (c *Client) fetchOpUpdateTableDiscoverEndpoint(ctx context.Context, region 
 
 	go c.handleEndpointDiscoveryFromService(ctx, discoveryOperationInput, region, key, opt)
 	return internalEndpointDiscovery.WeightedAddress{}, nil
-}
-
-func newServiceMetadataMiddleware_opUpdateTable(region string) *awsmiddleware.RegisterServiceMetadata {
-	return &awsmiddleware.RegisterServiceMetadata{
-		Region:        region,
-		ServiceID:     ServiceID,
-		OperationName: "UpdateTable",
-	}
 }

@@ -36,11 +36,27 @@ type Feed struct {
 	Items           []*Item                  `json:"items"`
 	FeedType        string                   `json:"feedType"`
 	FeedVersion     string                   `json:"feedVersion"`
+
+	// originalFeed holds the source *rss.Feed, *atom.Feed, or *json.Feed when
+	// the parser was configured with KeepOriginalFeed. It is unexported (and so
+	// not serialized) because it is only meaningful in-process.
+	originalFeed interface{}
 }
 
+// String returns a JSON representation of the Feed for debugging purposes.
 func (f Feed) String() string {
 	json, _ := json.MarshalIndent(f, "", "    ")
 	return string(json)
+}
+
+// OriginalFeed returns the source feed object (*rss.Feed, *atom.Feed, or
+// *json.Feed) this Feed was translated from, giving access to format-specific
+// fields not present on the universal Feed. It is only populated when the
+// parser has KeepOriginalFeed set, and returns nil otherwise. The original is
+// held in memory, not serialized, so it does not survive a Feed that has been
+// marshaled and unmarshaled.
+func (f Feed) OriginalFeed() interface{} {
+	return f.originalFeed
 }
 
 // Item is the universal Item type that atom.Entry
@@ -97,9 +113,19 @@ func (f Feed) Len() int {
 // Less compares PublishedParsed of Items[i], Items[k]
 // and returns true if Items[i] is less than Items[k].
 func (f Feed) Less(i, k int) bool {
-	return f.Items[i].PublishedParsed.Before(
-		*f.Items[k].PublishedParsed,
-	)
+	iParsed := f.Items[i].PublishedParsed
+	kParsed := f.Items[k].PublishedParsed
+
+	if iParsed == nil && kParsed == nil {
+		return false
+	}
+	if iParsed == nil {
+		return true
+	}
+	if kParsed == nil {
+		return false
+	}
+	return iParsed.Before(*kParsed)
 }
 
 // Swap swaps Items[i] and Items[k].

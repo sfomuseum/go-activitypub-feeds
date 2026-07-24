@@ -8,14 +8,14 @@ import (
 
 // DateFormats taken from github.com/mjibson/goread
 var dateFormats = []string{
-	time.RFC822,  // RSS
+	// Numeric-offset and zoneless formats only. Named-zone formats (those
+	// ending in "MST") must NOT be here: time.Parse resolves an unknown zone
+	// abbreviation to a zero offset, so a named-zone date matched here returns
+	// silently shifted. Those layouts live in dateFormatsWithNamedZone instead.
 	time.RFC822Z, // RSS
 	time.RFC3339, // Atom
-	time.UnixDate,
 	time.RubyDate,
-	time.RFC850,
 	time.RFC1123Z,
-	time.RFC1123,
 	time.ANSIC,
 	"Mon, January 2 2006 15:04:05 -0700",
 	"Mon, Jan 2 2006 15:04:05 -700",
@@ -80,6 +80,7 @@ var dateFormats = []string{
 	"Jan 2, 2006",
 	"Jan 02 2006 03:04:05PM",
 	"Jan 02, 2006",
+	"Jan 2 2006 15:04:05",
 	"6/1/2 15:04",
 	"6-1-2 15:04",
 	"2 January 2006 15:04:05 -0700",
@@ -139,6 +140,10 @@ var dateFormats = []string{
 
 // Named zone cannot be consistently loaded, so handle separately
 var dateFormatsWithNamedZone = []string{
+	time.RFC1123,  // "Mon, 02 Jan 2006 15:04:05 MST"
+	time.RFC850,   // "Monday, 02-Jan-06 15:04:05 MST"
+	time.RFC822,   // "02 Jan 06 15:04 MST"
+	time.UnixDate, // "Mon Jan _2 15:04:05 MST 2006"
 	"Mon, January 02, 2006, 15:04:05 MST",
 	"Mon, January 02, 2006 15:04:05 MST",
 	"Mon, Jan 2, 2006 15:04 MST",
@@ -161,7 +166,7 @@ var dateFormatsWithNamedZone = []string{
 	"mon,2 Jan 2006 15:04:05 MST",
 	"Mon, 2 Jan 15:04:05 MST",
 	"Mon, 2 Jan 06 15:04:05 MST",
-	"Mon,02 January 2006 14:04:05 MST",
+	"Mon,02 January 2006 15:04:05 MST",
 	"Mon, 02 Jan 2006 3:04:05 PM MST",
 	"Mon,02 Jan 2006 15:04 MST",
 	"Mon, 02 Jan 2006 15:04 MST",
@@ -186,12 +191,40 @@ var dateFormatsWithNamedZone = []string{
 	"01/02/2006 15:04:05 MST",
 }
 
+// timezoneAbbreviations maps the zone abbreviations seen in feed dates to their
+// offset in seconds. Go's time package only knows UTC and the host's local
+// zone, so it parses any other abbreviation as a zero offset (and its handling
+// of the ones it does know depends on where the code runs). We resolve them
+// ourselves for a deterministic result. A few abbreviations are genuinely
+// ambiguous (CST, BST); we use the North American / Western European reading
+// that dominates real-world feeds.
+var timezoneAbbreviations = map[string]int{
+	"UT":   0,
+	"GMT":  0,
+	"UTC":  0,
+	"EST":  -5 * 3600,
+	"EDT":  -4 * 3600,
+	"CST":  -6 * 3600,
+	"CDT":  -5 * 3600,
+	"MST":  -7 * 3600,
+	"MDT":  -6 * 3600,
+	"PST":  -8 * 3600,
+	"PDT":  -7 * 3600,
+	"WET":  0,
+	"WEST": 1 * 3600,
+	"BST":  1 * 3600,
+	"CET":  1 * 3600,
+	"CEST": 2 * 3600,
+	"EET":  2 * 3600,
+	"EEST": 3 * 3600,
+}
+
 // ParseDate parses a given date string using a large
 // list of commonly found feed date formats.
 func ParseDate(ds string) (t time.Time, err error) {
 	d := strings.TrimSpace(ds)
 	if d == "" {
-		return t, fmt.Errorf("Date string is empty")
+		return t, fmt.Errorf("date string is empty")
 	}
 	for _, f := range dateFormats {
 		if t, err = time.Parse(f, d); err == nil {
@@ -204,19 +237,20 @@ func ParseDate(ds string) (t time.Time, err error) {
 			continue
 		}
 
-		// This is a format match! Now try to load the timezone name
-		loc, err := time.LoadLocation(t.Location().String())
-		if err != nil {
-			// We couldn't load the TZ name. Just use UTC instead...
-			return t, nil
+		// time.Parse gives an unknown zone abbreviation a zero offset, and its
+		// handling of known ones is host-dependent. If we recognise the
+		// abbreviation, rebuild the time with our own offset so the result is
+		// correct and deterministic. An unrecognised abbreviation is left as
+		// parsed (best effort).
+		if name, offset := t.Zone(); name != "" {
+			if want, ok := timezoneAbbreviations[name]; ok && want != offset {
+				t = time.Date(t.Year(), t.Month(), t.Day(), t.Hour(),
+					t.Minute(), t.Second(), t.Nanosecond(), time.FixedZone(name, want))
+			}
 		}
-
-		if t, err = time.ParseInLocation(f, ds, loc); err == nil {
-			return t, nil
-		}
-		// This should not be reachable
+		return t, nil
 	}
 
-	err = fmt.Errorf("Failed to parse date: %s", ds)
+	err = fmt.Errorf("failed to parse date: %s", ds)
 	return
 }

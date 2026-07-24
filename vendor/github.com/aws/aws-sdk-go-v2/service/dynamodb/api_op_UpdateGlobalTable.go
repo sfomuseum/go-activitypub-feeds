@@ -5,7 +5,6 @@ package dynamodb
 import (
 	"context"
 	"fmt"
-	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	internalEndpointDiscovery "github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery"
 	"github.com/aws/smithy-go/middleware"
@@ -26,9 +25,7 @@ import (
 // To determine which version you're using, see [Determining the global table version you are using]. To update existing global tables
 // from version 2017.11.29 (Legacy) to version 2019.11.21 (Current), see [Upgrading global tables].
 //
-// For global tables, this operation only applies to global tables using Version
-// 2019.11.21 (Current version). If you are using global tables [Version 2019.11.21]you can use [UpdateTable]
-// instead.
+// If you are using global tables [Version 2019.11.21] (Current) you can use [UpdateTable] instead.
 //
 // Although you can use UpdateGlobalTable to add replicas and remove replicas in a
 // single request, for simplicity we recommend that you issue separate requests for
@@ -98,9 +95,6 @@ type UpdateGlobalTableOutput struct {
 }
 
 func (c *Client) addOperationUpdateGlobalTableMiddlewares(stack *middleware.Stack, options Options) (err error) {
-	if err := stack.Serialize.Add(&setOperationInputMiddleware{}, middleware.After); err != nil {
-		return err
-	}
 	err = stack.Serialize.Add(&awsAwsjson10_serializeOpUpdateGlobalTable{}, middleware.After)
 	if err != nil {
 		return err
@@ -109,17 +103,8 @@ func (c *Client) addOperationUpdateGlobalTableMiddlewares(stack *middleware.Stac
 	if err != nil {
 		return err
 	}
-	if err := addProtocolFinalizerMiddlewares(stack, options, "UpdateGlobalTable"); err != nil {
-		return fmt.Errorf("add protocol finalizers: %v", err)
-	}
 
 	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
-		return err
-	}
-	if err = addSetLoggerMiddleware(stack, options); err != nil {
-		return err
-	}
-	if err = addClientRequestID(stack); err != nil {
 		return err
 	}
 	if err = addComputeContentLength(stack); err != nil {
@@ -131,19 +116,7 @@ func (c *Client) addOperationUpdateGlobalTableMiddlewares(stack *middleware.Stac
 	if err = addComputePayloadSHA256(stack); err != nil {
 		return err
 	}
-	if err = addRetry(stack, options); err != nil {
-		return err
-	}
-	if err = addRawResponseToMetadata(stack); err != nil {
-		return err
-	}
-	if err = addRecordResponseTiming(stack); err != nil {
-		return err
-	}
-	if err = addSpanRetryLoop(stack, options); err != nil {
-		return err
-	}
-	if err = addClientUserAgent(stack, options); err != nil {
+	if err = addRecordResponseTiming(stack, options); err != nil {
 		return err
 	}
 	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
@@ -155,15 +128,6 @@ func (c *Client) addOperationUpdateGlobalTableMiddlewares(stack *middleware.Stac
 	if err = addOpUpdateGlobalTableDiscoverEndpointMiddleware(stack, options, c); err != nil {
 		return err
 	}
-	if err = addSetLegacyContextSigningOptionsMiddleware(stack); err != nil {
-		return err
-	}
-	if err = addTimeOffsetBuild(stack, c); err != nil {
-		return err
-	}
-	if err = addUserAgentRetryMode(stack, options); err != nil {
-		return err
-	}
 	if err = addUserAgentAccountIDEndpointMode(stack, options); err != nil {
 		return err
 	}
@@ -173,10 +137,7 @@ func (c *Client) addOperationUpdateGlobalTableMiddlewares(stack *middleware.Stac
 	if err = addOpUpdateGlobalTableValidationMiddleware(stack); err != nil {
 		return err
 	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware_opUpdateGlobalTable(options.Region), middleware.Before); err != nil {
-		return err
-	}
-	if err = addRecursionDetection(stack); err != nil {
+	if err = stack.Initialize.Add(newServiceMetadataMiddleware(options.Region, "UpdateGlobalTable"), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
@@ -197,16 +158,7 @@ func (c *Client) addOperationUpdateGlobalTableMiddlewares(stack *middleware.Stac
 	if err = addDisableHTTPSMiddleware(stack, options); err != nil {
 		return err
 	}
-	if err = addSpanInitializeStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanInitializeEnd(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestEnd(stack); err != nil {
+	if err = addInterceptors(stack, options); err != nil {
 		return err
 	}
 	return nil
@@ -253,12 +205,4 @@ func (c *Client) fetchOpUpdateGlobalTableDiscoverEndpoint(ctx context.Context, r
 
 	go c.handleEndpointDiscoveryFromService(ctx, discoveryOperationInput, region, key, opt)
 	return internalEndpointDiscovery.WeightedAddress{}, nil
-}
-
-func newServiceMetadataMiddleware_opUpdateGlobalTable(region string) *awsmiddleware.RegisterServiceMetadata {
-	return &awsmiddleware.RegisterServiceMetadata{
-		Region:        region,
-		ServiceID:     ServiceID,
-		OperationName: "UpdateGlobalTable",
-	}
 }
